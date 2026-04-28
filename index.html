@@ -1,14 +1,186 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>
-            Hello World!
-        </title>
-        <body>
-            <h1>
-                Hi.
-            </h1>
-        </body>
-    </head>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>数学方块掉落游戏</title>
+    <!-- 引入 pdf.js 用于处理 PDF 文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; font-family: Arial, sans-serif; }
+        canvas { display: block; background: #000; margin: 0 auto; border: 2px solid #555; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="ui">得分: <span id="score">0</span></div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+/** 游戏配置 **/
+const config = {
+    pdfUrl: 'four.pdf', // 你的角色PDF文件路径
+    blockSpeed: 2,           // 下落速度
+    spawnInterval: 2000,     // 每行生成的间隔时间 (毫秒)
+    playerSize: 60,          // 角色显示大小
+    mathRange: 10            // 随机数的最大范围
+};
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+
+let score = 0;
+let player = { x: 0, y: 0, img: null };
+let rows = []; // 存储方块行
+let gameActive = false;
+
+// 初始化画布大小
+function resize() {
+    canvas.width = 400; // 游戏宽度，根据需要调整
+    canvas.height = window.innerHeight;
+    player.x = canvas.width / 2 - config.playerSize / 2;
+    player.y = canvas.height - config.playerSize - 20;
+}
+
+/** 1. 从 PDF 加载角色形象 **/
+async function loadPlayerFromPDF() {
+    try {
+        const loadingTask = pdfjsLib.getDocument(config.pdfUrl);
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1); // 获取第一页
+
+        const viewport = page.getViewport({ scale: 2.0 });
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = viewport.width;
+        tempCanvas.height = viewport.height;
+
+        await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
+        
+        // 将 PDF 页面转换为图片对象
+        player.img = new Image();
+        player.img.src = tempCanvas.toDataURL();
+        player.img.onload = () => { gameActive = true; animate(); };
+    } catch (e) {
+        console.error("PDF加载失败，请检查文件路径或跨域设置。", e);
+        // 如果失败，使用占位矩形
+        player.img = "placeholder";
+        gameActive = true;
+        animate();
+    }
+}
+
+/** 2. 生成随机数学运算 **/
+function createMathEffect() {
+    const ops = ['+', '-', '*', '/'];
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    const val = Math.floor(Math.random() * config.mathRange) + 1;
+    return { op, val, text: `${op}${val}` };
+}
+
+/** 3. 生成一行方块 (每行两个) **/
+function spawnRow() {
+    const blockWidth = canvas.width / 2;
+    const blockHeight = 40;
+    const row = {
+        y: -blockHeight,
+        blocks: [
+            { x: 0, w: blockWidth, effect: createMathEffect(), color: '#3498db' },
+            { x: blockWidth, w: blockWidth, effect: createMathEffect(), color: '#e74c3c' }
+        ]
+    };
+    rows.push(row);
+}
+
+/** 4. 逻辑更新与碰撞检测 **/
+function update() {
+    for (let i = rows.length - 1; i >= 0; i--) {
+        rows[i].y += config.blockSpeed;
+
+        // 碰撞检测：角色碰到该行的任何一个方块
+        if (rows[i].y + 40 >= player.y && rows[i].y <= player.y + config.playerSize) {
+            // 判断碰到了哪一边的方块
+            const hitIndex = (player.x + config.playerSize / 2 < canvas.width / 2) ? 0 : 1;
+            const effect = rows[i].blocks[hitIndex].effect;
+            
+            // 应用得分效果
+            applyEffect(effect);
+            
+            // 该行方块消失
+            rows.splice(i, 1);
+            continue;
+        }
+
+        // 移除超出屏幕的行
+        if (rows[i].y > canvas.height) {
+            rows.splice(i, 1);
+        }
+    }
+}
+
+function applyEffect(eff) {
+    switch(eff.op) {
+        case '+': score += eff.val; break;
+        case '-': score -= eff.val; break;
+        case '*': score *= eff.val; break;
+        case '/': score = Math.floor(score / eff.val); break;
+    }
+    scoreEl.innerText = score;
+}
+
+/** 5. 绘制画面 **/
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 绘制方块
+    rows.forEach(row => {
+        row.blocks.forEach(b => {
+            ctx.fillStyle = b.color;
+            ctx.fillRect(b.x, row.y, b.w, 40);
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(b.x, row.y, b.w, 40);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(b.effect.text, b.x + b.w/2, row.y + 28);
+        });
+    });
+
+    // 绘制角色
+    if (player.img === "placeholder") {
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(player.x, player.y, config.playerSize, config.playerSize);
+    } else if (player.img) {
+        ctx.drawImage(player.img, player.x, player.y, config.playerSize, config.playerSize);
+    }
+}
+
+/** 6. 主循环与输入 **/
+function animate() {
+    if (!gameActive) return;
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+// 键盘控制
+window.addEventListener('keydown', e => {
+    const step = 20;
+    if (e.key === 'ArrowLeft' && player.x > 0) player.x -= step;
+    if (e.key === 'ArrowRight' && player.x < canvas.width - config.playerSize) player.x += step;
+});
+
+// 自动生成方块行
+setInterval(() => {
+    if (gameActive) spawnRow();
+}, config.spawnInterval);
+
+// 启动
+resize();
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+loadPlayerFromPDF();
+</script>
+</body>
 </html>
