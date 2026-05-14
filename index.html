@@ -4,30 +4,249 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>My Personal Blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;max-width:900px;margin:2rem auto;padding:0 1rem;color:#111}
+    :root{--bg-color:#cfeeff}
+    html,body{height:100%}
+    body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;color:#111;background:var(--bg-color);overflow-x:hidden}
+    .site{max-width:900px;margin:2rem auto;padding:0 1rem;position:relative;z-index:3}
     header,footer{padding:1rem 0;text-align:center}
     nav a{margin:0 .5rem;color:inherit;text-decoration:none}
     .post{border-bottom:1px solid #eee;padding:.75rem 0}
     .meta{color:#666;font-size:.9rem}
+    /* time controls */
+    .time-controls{display:inline-flex;gap:.6rem;align-items:center;margin-top:.6rem}
+    .time-controls input[type="range"]{width:160px}
+    .time-controls button{background:#fff;border:1px solid #ddd;padding:.25rem .5rem;border-radius:4px;cursor:pointer}
+    /* sky and clouds */
+    #sky{position:fixed;left:0;top:0;width:100%;height:340px;z-index:0;pointer-events:none}
+    #clouds{position:fixed;left:0;top:0;width:100%;height:280px;z-index:1;pointer-events:none}
+    main{padding-top:1rem}
+    /* readable blocks so clouds never overlap text */
+    .card{background:rgba(255,255,255,0.95);backdrop-filter:blur(6px);padding:1rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    header .card{display:inline-block;text-align:center}
+    article.card{margin-bottom:1rem}
+    /* pixel-ish heading */
+    h1{font-family:'Press Start 2P',monospace;font-size:2.6rem;letter-spacing:1px;margin:.6rem 0}
+    h2{font-size:1.2rem;margin:.2rem 0}
   </style>
 </head>
 <body>
-  <header>
-    <h1>My Personal Blog</h1>
-    <nav><a href="/">Home</a> <a href="/about.html">About</a></nav>
-  </header>
-  <main>
-    <section id="posts">
-      <article class="post">
-        <h2><a href="#">Welcome — first post</a></h2>
-        <p class="meta">2026-05-14</p>
-        <p>Introductory post. Edit index.html to add real posts.</p>
-      </article>
-    </section>
-  </main>
-  <footer>
-    <p>&copy; 2026 Your Name</p>
-  </footer>
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <canvas id="clouds" aria-hidden="true"></canvas>
+  <div class="site">
+    <header>
+      <div class="card">
+        <h1>My Personal Blog</h1>
+        <nav><a href="/">Home</a> <a href="/about.html">About</a></nav>
+        <div class="time-controls" role="region" aria-label="Time controls">
+          <label for="timeRange">Time:</label>
+          <input id="timeRange" type="range" min="0" max="24" step="0.1" value="12">
+          <span id="timeLabel">12:00</span>
+          <button id="toggleTime" title="Play/Pause time">Pause</button>
+          <button id="resetTime" title="Reset time">Reset</button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section id="posts">
+        <article class="card post">
+          <h2><a href="#">Welcome — first post</a></h2>
+          <p class="meta">2026-05-14</p>
+          <p>Introductory post. Edit index.html to add real posts.</p>
+        </article>
+      </section>
+    </main>
+    <footer>
+      <div class="card"><p>&copy; 2026 Your Name</p></div>
+    </footer>
+  </div>
+  <script>
+    // Time, sun & moon + sky color. Time is customizable and can play/pause.
+    (function(){
+      const root = document.documentElement;
+      const timeRange = document.getElementById('timeRange');
+      const timeLabel = document.getElementById('timeLabel');
+      const toggle = document.getElementById('toggleTime');
+      const reset = document.getElementById('resetTime');
+      let time = parseFloat(timeRange.value) || 12; // 0-24 hours
+      let playing = true;
+      let playSpeed = 0.02; // hours per frame tick (adjustable)
+
+      // sky canvas (behind clouds)      const sky = document.getElementById('sky');
+      const sctx = sky.getContext('2d');
+      let DPR = Math.max(1, window.devicePixelRatio || 1);
+      function resizeSky(){
+        sky.width = Math.ceil(window.innerWidth*DPR);
+        sky.height = Math.ceil(340*DPR);
+        sky.style.width = '100%';
+        sky.style.height = '340px';
+        sctx.imageSmoothingEnabled = true;
+      }
+      resizeSky();
+      window.addEventListener('resize', resizeSky);
+
+      function lerp(a,b,t){return a+(b-a)*t}
+      function lerpColor(a,b,t){
+        // a,b are hex like '#rrggbb'
+        const pa = a.match(/#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i).slice(1).map(x=>parseInt(x,16));
+        const pb = b.match(/#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i).slice(1).map(x=>parseInt(x,16));
+        const pr = pa.map((v,i)=>Math.round(lerp(v,pb[i],t)));
+        return `rgb(${pr[0]},${pr[1]},${pr[2]})`;
+      }
+      function skyColorForHour(h){
+        // simple zones: night(0-5), dawn(5-8), day(8-17), dusk(17-20), night(20-24)
+        if(h<5) return lerpColor('#061325','#08304a', h/5);
+        if(h<8) return lerpColor('#08304a','#ffd7a8',(h-5)/3);
+        if(h<17) return lerpColor('#87c9f9','#cfeeff',(h-8)/9);
+        if(h<20) return lerpColor('#ffd7a8','#08304a',(h-17)/3);
+        return lerpColor('#08304a','#061325',(h-20)/4);
+      }
+
+      function drawSky(h){
+        const w = sky.width, H = sky.height;
+        // set body background to a gradient based on sky color
+        const top = skyColorForHour((h+1)%24);
+        const bottom = skyColorForHour(h);
+        document.body.style.background = `linear-gradient(${top}, ${bottom})`;
+        // draw subtle radial glow for sun/moon
+        sctx.clearRect(0,0,w,H);
+        // sun position (visible roughly 5..19)
+        const sunVisible = (h>=5 && h<=19);
+        const moonVisible = !sunVisible;
+        const angle = ((h / 24) * Math.PI * 2) - Math.PI/2; // -90deg start
+        const cx = w/2 + (w/2 + 100)*Math.cos(angle); // orbit around off-center for nicer curve
+        const cy = H*0.55 + (H*0.6)*Math.sin(angle) * -0.6; // arc up and down
+        if(sunVisible){
+          const g = sctx.createRadialGradient(cx,cy,10, cx,cy, Math.max(w,H)*0.35);
+          g.addColorStop(0,'rgba(255,245,200,0.95)');
+          g.addColorStop(0.4,'rgba(255,200,80,0.45)');
+          g.addColorStop(1,'rgba(255,180,60,0.0)');
+          sctx.fillStyle = g;
+          sctx.fillRect(0,0,w,H);
+          // sharp sun disc
+          sctx.beginPath(); sctx.arc(cx,cy, Math.max(10, H*0.04),0,Math.PI*2); sctx.fillStyle='rgba(255,230,120,1)'; sctx.fill();
+        } else {
+          // moon (opposite)
+          const g = sctx.createRadialGradient(cx,cy,8, cx,cy, Math.max(w,H)*0.2);
+          g.addColorStop(0,'rgba(240,240,255,0.95)');
+          g.addColorStop(1,'rgba(240,240,255,0.0)');
+          sctx.fillStyle = g;
+          sctx.fillRect(0,0,w,H);
+          sctx.beginPath(); sctx.arc(cx,cy, Math.max(8, H*0.035),0,Math.PI*2); sctx.fillStyle='rgba(240,240,255,0.95)'; sctx.fill();
+        }
+      }
+
+      function updateTimeLabel(h){
+        const hh = Math.floor(h)%24;
+        const mm = Math.floor((h - Math.floor(h))*60);
+        timeLabel.textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+      }
+
+      // controls
+      timeRange.addEventListener('input', e=>{ time = parseFloat(e.target.value); updateTimeLabel(time); drawSky(time); });
+      toggle.addEventListener('click', ()=>{ playing = !playing; toggle.textContent = playing ? 'Pause' : 'Play'; });
+      reset.addEventListener('click', ()=>{ time = 12; timeRange.value = time; updateTimeLabel(time); drawSky(time); });
+
+      // initialize
+      updateTimeLabel(time); drawSky(time);
+
+      // animate time if playing and also update cloud canvas background effect by exposing time variable globally
+      let last = performance.now();
+      function tick(t){
+        const dt = (t-last)/1000; last = t;
+        if(playing){
+          time = (time + playSpeed * dt * 60) % 24; // playSpeed scaled (hours per second)
+          timeRange.value = time;
+          updateTimeLabel(time);
+          drawSky(time);
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      // expose currentTime for cloud script to optionally react
+      window.__blogTime = ()=>time;
+    })();
+
+    // Clouds (unchanged clustering script, but uses window.__blogTime if needed)
+    (function(){
+      const canvas = document.getElementById('clouds');
+      const ctx = canvas.getContext('2d');
+      let DPR = Math.max(1, window.devicePixelRatio || 1);
+      const HEIGHT = 280;
+      function resize(){
+        canvas.width = Math.ceil(window.innerWidth * DPR);
+        canvas.height = Math.ceil(HEIGHT * DPR);
+        canvas.style.height = HEIGHT + 'px';
+        canvas.style.width = '100%';
+        ctx.imageSmoothingEnabled = false;
+      }
+      resize();
+      window.addEventListener('resize', ()=>{DPR = Math.max(1, window.devicePixelRatio || 1); resize();});
+
+      function makePixelSprite(cols,rows,alpha){
+        const s = document.createElement('canvas');
+        s.width = cols; s.height = rows;
+        const c = s.getContext('2d');
+        const cx = cols/2, cy = rows/2;
+        const r = Math.min(cols,rows)*0.45;
+        for(let y=0;y<rows;y++){
+          for(let x=0;x<cols;x++){
+            const dx = (x - cx) + (Math.random()-0.5)*0.6;
+            const dy = (y - cy) + (Math.random()-0.5)*0.6;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const base = Math.max(0, 1 - (Math.abs(x-cx) / (cols*0.7)) );
+            if(dist < r + (Math.random()*1.6 - 0.7)){
+              const localAlpha = Math.max(0.06, base) * alpha;
+              c.fillStyle = `rgba(255,255,255,${localAlpha.toFixed(3)})`;
+              c.fillRect(x, y, 1, 1);
+            }
+          }
+        }
+        return s;
+      }
+
+      const sprites = [makePixelSprite(110,12,0.82), makePixelSprite(160,14,0.76), makePixelSprite(90,10,0.86)];
+      const clouds = [];
+
+      const clusterCount = 3;
+      for(let i=0;i<clusterCount;i++){
+        const centerX = Math.random()*window.innerWidth*DPR;
+        const centerY = 20 + Math.random()*(HEIGHT*0.4)*DPR;
+        const members = 3 + Math.floor(Math.random()*4);
+        for(let m=0;m<members;m++){
+          const s = sprites[(i+m)%sprites.length];
+          clouds.push({x: centerX + (Math.random()-0.5)*200*DPR, y: centerY + (Math.random()-0.5)*40*DPR, speed: (0.06+Math.random()*0.18)*DPR, sprite:s, scale: (1.2+Math.random()*2.2), hStretch: 1.6 + Math.random()*0.8});
+        }
+      }
+
+      for(let i=0;i<6;i++){
+        const s = sprites[i%sprites.length];
+        clouds.push({x: Math.random()*window.innerWidth*DPR, y: 10 + Math.random()*(HEIGHT*0.6)*DPR, speed: (0.18+Math.random()*0.5)*DPR, sprite:s, scale: (0.9+Math.random()*1.8), hStretch: 1.4 + Math.random()*0.6});
+      }
+
+      let last = performance.now();
+      function frame(t){
+        const dt = (t-last)/16.666; last = t;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const currentTime = (typeof window.__blogTime === 'function') ? window.__blogTime() : 12;
+        // optionally adjust cloud opacity/density by time (denser during certain hours)
+        const densityFactor = (currentTime>5 && currentTime<19) ? 1.0 : 0.9;
+        for(const c of clouds){
+          c.x += c.speed * dt * (0.9 + densityFactor*0.3);
+          if(c.x - 900 > canvas.width) c.x = - (c.sprite.width * c.scale * DPR) - Math.random()*900;
+          ctx.imageSmoothingEnabled = false;
+          const dw = Math.round(c.sprite.width * c.scale * DPR * c.hStretch);
+          const dh = Math.round(c.sprite.height * c.scale * DPR);
+          ctx.globalAlpha = 0.9 * (densityFactor);
+          ctx.drawImage(c.sprite, Math.round(c.x), Math.round(c.y), dw, dh);
+          ctx.globalAlpha = 1.0;
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
 </body>
 </html>
