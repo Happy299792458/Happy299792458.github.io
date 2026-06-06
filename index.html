@@ -124,7 +124,7 @@
                 <circle cx="17" cy="17" r="1.5" fill="currentColor"/>
               </svg>
             </div>
-            <span class="badge dev">开发就绪</span>
+            <span class="badge">人格评估</span>
           </div>
           <div class="card-body">
             <span class="card-abbr">MODULE // BADC</span>
@@ -174,25 +174,6 @@
       </div>
     </section>
 
-    <!-- Simulated Log Console -->
-    <section class="terminal-section">
-      <div class="terminal-window">
-        <div class="terminal-header">
-          <div class="terminal-buttons">
-            <span class="term-btn"></span>
-            <span class="term-btn"></span>
-            <span class="term-btn"></span>
-          </div>
-          <span class="terminal-title">Console Simulator</span>
-          <span style="width: 32px;"></span> <!-- Spacer for alignment -->
-        </div>
-        <div class="terminal-body" id="terminalConsole">
-          <!-- Lines will be dynamically appended here -->
-          <div class="term-line system">LOG STREAMS REGISTERED. CONNECTING TO HOST...</div>
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <!-- Footer -->
@@ -233,8 +214,6 @@
       htmlEl.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
       updateThemeIcon(newTheme);
-      
-      logToTerminal(`[SYSTEM] User toggled theme mode to: ${newTheme.toUpperCase()}`);
     });
 
     function updateThemeIcon(theme) {
@@ -246,74 +225,6 @@
         themeIcon.innerHTML = `<path d="${lightIconPath}"/>`;
       }
     }
-
-    // Terminal Logging Simulator
-    const consoleEl = document.getElementById('terminalConsole');
-    const logQueue = [
-      "INITIALIZING BOOTSTRAP PROTOCOL...",
-      "LOADING SYSTEM DRIVERS & STYLES...",
-      "SCANNING FOR TEST REGISTRY FOLDERS...",
-      "FOUND: /Intelligence/ [ACTIVE]",
-      "FOUND: /BaDC/         [PENDING]",
-      "FOUND: /ManMom/       [PENDING]",
-      "CHECKING DEVICE VIEWPORT ADAPTABILITY...",
-      `VIEWPORT DETECTED: ${window.innerWidth}x${window.innerHeight} (${isMobile() ? 'Mobile' : 'Desktop'} Mode)`,
-      "ALL MODULE NAVIGATION HANDLERS DELEGATED.",
-      "SYSTEM RUNNING IN SECURE SANDBOX.",
-      "NEO-TEST CONSOLE PROTOCOL VER 2.6 // STANDBY"
-    ];
-
-    function isMobile() {
-      return window.innerWidth <= 600;
-    }
-
-    let lineIndex = 0;
-    function printNextLine() {
-      if (lineIndex < logQueue.length) {
-        const line = logQueue[lineIndex];
-        logToTerminal(line);
-        lineIndex++;
-        // Add random variation in typing delay for realistic terminal feel
-        setTimeout(printNextLine, 120 + Math.random() * 200);
-      } else {
-        addPromptInputLine();
-      }
-    }
-
-    function logToTerminal(text) {
-      const lineDiv = document.createElement('div');
-      lineDiv.className = 'term-line';
-      
-      // Highlight system or successful items
-      if (text.startsWith('[SYSTEM]') || text.startsWith('SUCCESS') || text.includes('FOUND') || text.includes('RUNNING')) {
-        lineDiv.classList.add('system');
-      }
-      
-      lineDiv.textContent = `[2026-06-06T${new Date().toLocaleTimeString('zh-CN', {hour12: false})}] ${text}`;
-      consoleEl.appendChild(lineDiv);
-      consoleEl.scrollTop = consoleEl.scrollHeight;
-    }
-
-    function addPromptInputLine() {
-      const lineDiv = document.createElement('div');
-      lineDiv.className = 'term-line prompt';
-      lineDiv.innerHTML = `guest@neotest:~$ <span class="cursor-blink"></span>`;
-      consoleEl.appendChild(lineDiv);
-      consoleEl.scrollTop = consoleEl.scrollHeight;
-    }
-
-    // Start printing after brief initial delay
-    setTimeout(printNextLine, 500);
-
-    // Dynamic viewport resize log to show off responsiveness tracking
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        logToTerminal(`[SYSTEM] Viewport updated: ${window.innerWidth}x${window.innerHeight} (${isMobile() ? 'Mobile' : 'Desktop'} Mode)`);
-      }, 500);
-    });
-
   </script>
 </body>
 </html>

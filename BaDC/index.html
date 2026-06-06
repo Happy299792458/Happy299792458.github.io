@@ -3,76 +3,308 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>行为与决策倾向评估 - NEO-TEST 2026</title>
+  
+  <title>BaDC人格与决策倾向测试 - 2026测试系统</title>
+  <meta name="description" content="基于情境化抉择偏好，量化测定您的底层人格类型（A者/B者/C者/D者）。采用自适应响应式设计。">
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Shared Stylesheet -->
   <link rel="stylesheet" href="../index.css">
+  
+  <!-- Module Specific Styles -->
   <style>
-    .placeholder-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    .module-wrapper {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+    }
+    
+    .panel {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3rem 2.5rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition-smooth);
+    }
+    
+    /* Step 1: Welcome */
+    .intro-header {
       text-align: center;
-      min-height: 60vh;
-      padding: 2rem 0;
+      margin-bottom: 2.5rem;
     }
-    .dev-icon {
-      font-size: 3rem;
-      font-family: var(--font-mono);
-      margin-bottom: 2rem;
-      color: var(--text-secondary);
-      border: 1px dashed var(--border-hover);
-      padding: 1.5rem;
-      border-radius: 50%;
-      width: 100px;
-      height: 100px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: spin-slow 10s linear infinite;
-    }
-    @keyframes spin-slow {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .placeholder-title {
+    .intro-header h1 {
       font-size: 2.2rem;
       font-weight: 700;
-      margin-bottom: 1rem;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
     }
-    .placeholder-desc {
-      font-size: 1.1rem;
+    .intro-header p {
       color: var(--text-secondary);
-      max-width: 500px;
+      font-size: 1.05rem;
       line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .intro-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
       margin-bottom: 3rem;
     }
-    .btn-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background-color: var(--text-primary);
-      color: var(--accent-inverse);
-      padding: 0.8rem 1.8rem;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.95rem;
-      border: 1px solid var(--text-primary);
-      transition: var(--transition-fast);
+    .feature-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      background-color: var(--bg-primary);
     }
-    .btn-back:hover {
-      background-color: transparent;
+    .feature-card h3 {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
       color: var(--text-primary);
     }
-    .btn-back svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-      stroke-width: 2;
+    .feature-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    /* Step 2: Testing Interface */
+    .test-progress-bar {
+      width: 100%;
+      height: 4px;
+      background-color: var(--bg-tertiary);
+      border-radius: 2px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: var(--text-primary);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .test-stats-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .question-box {
+      margin-bottom: 2.5rem;
+    }
+    .question-label {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .question-text {
+      font-size: 1.6rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text-primary);
+    }
+    
+    /* Options stack */
+    .options-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .option-card {
+      border: 1px solid var(--border);
+      background-color: var(--bg-primary);
+      border-radius: 6px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      cursor: pointer;
+      text-align: left;
+      transition: var(--transition-fast);
+      user-select: none;
+    }
+    .option-card:hover {
+      border-color: var(--border-hover);
+      transform: translateX(4px);
+    }
+    .option-badge {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background-color: var(--bg-secondary);
+      transition: var(--transition-fast);
+    }
+    .option-card:hover .option-badge {
+      border-color: var(--text-primary);
+      background-color: var(--text-primary);
+      color: var(--accent-inverse);
+    }
+    .option-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+    
+    /* Step 3: Result dashboard */
+    .result-score-container {
+      text-align: center;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2.5rem;
+    }
+    .result-score-label {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .result-score-val {
+      font-size: 5rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.25rem;
+      color: var(--text-primary);
+      text-shadow: var(--glow);
+    }
+    .result-class-badge {
+      display: inline-block;
+      border: 1px solid var(--text-primary);
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .result-class-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+    
+    /* Profile Breakdown Bar list */
+    .breakdown-section {
+      margin: 3rem 0;
+      border-top: 1px dashed var(--border);
+      padding-top: 2.5rem;
+    }
+    .breakdown-title {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+      text-align: center;
+    }
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .breakdown-item {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .breakdown-label {
+      width: 140px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+    .breakdown-label.active {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .breakdown-track {
+      flex: 1;
+      height: 12px;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .breakdown-fill {
+      height: 100%;
+      background-color: var(--text-tertiary);
+      width: 0%;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .breakdown-item.active .breakdown-fill {
+      background-color: var(--text-primary);
+    }
+    .breakdown-val {
+      width: 45px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .breakdown-item.active .breakdown-val {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    /* Views State Management */
+    .view-step {
+      display: none;
+    }
+    .view-step.active {
+      display: block;
+    }
+    
+    /* Responsive styling */
+    @media (max-width: 600px) {
+      .module-wrapper {
+        margin: 2rem auto;
+      }
+      .panel {
+        padding: 2rem 1.5rem;
+      }
+      .intro-features {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .question-text {
+        font-size: 1.4rem;
+      }
+      .option-card {
+        padding: 1rem;
+        gap: 1rem;
+      }
+      .breakdown-item {
+        gap: 0.75rem;
+      }
+      .breakdown-label {
+        width: 110px;
+        font-size: 0.85rem;
+      }
     }
   </style>
 </head>
@@ -82,11 +314,11 @@
   <header class="site-header">
     <div class="container header-inner">
       <a href="../index.html" class="logo">
-        <span class="status-dot" style="background-color: var(--text-secondary);"></span>
-        <span>NEO-TEST // 2026</span>
+        <span class="status-dot"></span>
+        <span>2026测试系统</span>
       </a>
       <div class="header-controls">
-        <span class="system-status">MODULE: BADC</span>
+        <span class="system-status">模块：BaDC人格测试</span>
         <button class="theme-toggle" id="themeToggleBtn" aria-label="切换主题" title="切换黑白主题">
           <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
@@ -96,18 +328,109 @@
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="container">
-    <div class="placeholder-container">
-      <div class="dev-icon">BD</div>
-      <h1 class="placeholder-title">行为与决策倾向评估</h1>
-      <p class="placeholder-desc">
-        该模块的博弈模拟环境与风险模型诊断程序正在进行后台联调，预计将于近期完成上线部署。
-      </p>
-      <a href="../index.html" class="btn-back">
-        <svg fill="none" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor"/></svg>
-        返回主控台
-      </a>
+  <!-- Main Container -->
+  <main class="module-wrapper">
+    <div class="panel">
+      
+      <!-- STEP 1: WELCOME SCREEN -->
+      <div id="viewWelcome" class="view-step active">
+        <div class="intro-header">
+          <h1>BaDC 人格与决策倾向测试</h1>
+          <p>基于情境化决策偏好评估，测定您的底层行为倾向与人格维度（A者/B者/C者/D者）。</p>
+        </div>
+        
+        <div class="intro-features">
+          <div class="feature-card">
+            <h3>01 / 抉择驱动模型</h3>
+            <p>测试采用模拟决策场景。通过你的直觉选择，深入探索你在风险、规则、逻辑和共情维度的潜意识侧重。</p>
+          </div>
+          <div class="feature-card">
+            <h3>02 / 四大人格分类</h3>
+            <p>受试结果将归入四个经典认知角色：冒险探求者（A者）、稳健守护者（B者）、理性分析者（C者）或共情协作者（D者）。</p>
+          </div>
+          <div class="feature-card">
+            <h3>03 / 动态试题配置</h3>
+            <p>题库独立托管，不设固定的题目常量限制，支持未来方便地添加或修改测试维度。</p>
+          </div>
+          <div class="feature-card">
+            <h3>04 / 流式排版适配</h3>
+            <p>纯本地解析算法运行，毫秒级响应，完美的响应式适配方案。</p>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="startTest()">立即开始测试</button>
+      </div>
+
+      <!-- STEP 2: ACTIVE TESTING SCREEN -->
+      <div id="viewTesting" class="view-step">
+        <div class="test-progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        
+        <div class="test-stats-row">
+          <div>当前进度: <span id="lblQuestionIndex" class="history-val-highlight">0 / 0</span></div>
+          <div id="lblProgressPercent">0%</div>
+        </div>
+        
+        <div class="question-box">
+          <div class="question-label" id="lblQuestionCode">NODE: BADC_Q_01</div>
+          <div class="question-text" id="lblQuestionText">正在加载题目内容...</div>
+        </div>
+        
+        <div class="options-stack" id="optionsStack">
+          <!-- Options will be populated dynamically -->
+        </div>
+      </div>
+
+      <!-- STEP 3: RESULTS SCREEN -->
+      <div id="viewResults" class="view-step">
+        <div class="result-score-container">
+          <div class="result-score-label">您的人格维度判定结果</div>
+          <div class="result-score-val" id="resType">A者</div>
+          <div class="result-class-badge" id="resTitleBadge">冒险探求者</div>
+          <div class="result-class-desc" id="resDesc">
+            您拥有极高的风险耐受度与探索欲。
+          </div>
+        </div>
+
+        <!-- Progress Bars Breakdown -->
+        <div class="breakdown-section">
+          <h3 class="breakdown-title">您的认知倾向维度分布 (Tendency Profile)</h3>
+          <div class="breakdown-list">
+            
+            <div class="breakdown-item" id="breakdownA">
+              <span class="breakdown-label">A者 / 冒险度</span>
+              <div class="breakdown-track"><div class="breakdown-fill"></div></div>
+              <span class="breakdown-val">0%</span>
+            </div>
+            
+            <div class="breakdown-item" id="breakdownB">
+              <span class="breakdown-label">B者 / 稳健度</span>
+              <div class="breakdown-track"><div class="breakdown-fill"></div></div>
+              <span class="breakdown-val">0%</span>
+            </div>
+            
+            <div class="breakdown-item" id="breakdownC">
+              <span class="breakdown-label">C者 / 理性度</span>
+              <div class="breakdown-track"><div class="breakdown-fill"></div></div>
+              <span class="breakdown-val">0%</span>
+            </div>
+            
+            <div class="breakdown-item" id="breakdownD">
+              <span class="breakdown-label">D者 / 共情度</span>
+              <div class="breakdown-track"><div class="breakdown-fill"></div></div>
+              <span class="breakdown-val">0%</span>
+            </div>
+
+          </div>
+        </div>
+        
+        <div style="margin-top: 3rem; display: flex; gap: 1rem;">
+          <button class="btn btn-primary" style="flex: 1;" onclick="restartTest()">重新测试</button>
+          <a href="../index.html" class="btn" style="flex: 1; text-decoration: none;">返回主页面</a>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -123,7 +446,12 @@
     </div>
   </footer>
 
+  <!-- Load Engine and Local Script -->
+  <script src="engine.js"></script>
   <script>
+    // Instantiate test engine
+    const engine = new BaDCEngine();
+
     // Theme Toggle Handler
     const htmlEl = document.documentElement;
     const themeBtn = document.getElementById('themeToggleBtn');
@@ -132,7 +460,6 @@
     const darkIconPath = "M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z";
     const lightIconPath = "M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zm14.142 14.142l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM3.515 19.071l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414zm14.142-14.142l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414z";
 
-    // Set theme on load
     const savedTheme = localStorage.getItem('theme') || 'dark';
     htmlEl.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
@@ -155,6 +482,114 @@
         themeIcon.innerHTML = `<path d="${lightIconPath}"/>`;
       }
     }
+
+    // Step View Transition Manager
+    function showView(viewId) {
+      document.querySelectorAll('.view-step').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    // Start Test
+    async function startTest() {
+      // Initialize questions async (fetch or fallback)
+      await engine.initialize();
+      showView('viewTesting');
+      updateTestingView();
+    }
+
+    // Option selection
+    function selectOption(optionType) {
+      engine.submitAnswer(optionType);
+      
+      setTimeout(() => {
+        if (engine.isFinished) {
+          showResults();
+        } else {
+          updateTestingView();
+        }
+      }, 250);
+    }
+
+    // Update Question Card UI
+    function updateTestingView() {
+      const q = engine.getCurrentQuestion();
+      if (!q) return;
+
+      const total = engine.questions.length;
+      const currentNum = engine.currentIndex + 1;
+      
+      // Progress numbers
+      document.getElementById('lblQuestionIndex').textContent = `${currentNum} / ${total}`;
+      
+      const percent = Math.round(((currentNum - 1) / total) * 100);
+      document.getElementById('lblProgressPercent').textContent = `${percent}%`;
+      document.getElementById('progressFill').style.width = `${percent}%`;
+
+      // Question metadata
+      document.getElementById('lblQuestionCode').textContent = `NODE: BADC_Q_${currentNum.toString().padStart(2, '0')}`;
+      document.getElementById('lblQuestionText').textContent = q.question;
+
+      // Populate options stack
+      const stack = document.getElementById('optionsStack');
+      stack.innerHTML = '';
+
+      q.options.forEach(opt => {
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.onclick = () => selectOption(opt.type);
+
+        const badge = document.createElement('div');
+        badge.className = 'option-badge';
+        badge.textContent = opt.type;
+
+        const text = document.createElement('div');
+        text.className = 'option-text';
+        text.textContent = opt.text;
+
+        card.appendChild(badge);
+        card.appendChild(text);
+        stack.appendChild(card);
+      });
+    }
+
+    // Show results
+    function showResults() {
+      showView('viewResults');
+      
+      const report = engine.getPersonalityProfile();
+      if (!report) return;
+
+      document.getElementById('resType').textContent = report.type + '者';
+      document.getElementById('resTitleBadge').textContent = report.profile.title.split(' (')[0];
+      document.getElementById('resDesc').textContent = report.profile.desc;
+
+      // Populate progress bars
+      const types = ['A', 'B', 'C', 'D'];
+      types.forEach(t => {
+        const row = document.getElementById(`breakdown${t}`);
+        const fill = row.querySelector('.breakdown-fill');
+        const valText = row.querySelector('.breakdown-val');
+        const label = row.querySelector('.breakdown-label');
+        
+        const percent = report.percentages[t];
+        valText.textContent = `${percent}%`;
+        fill.style.width = `${percent}%`;
+        
+        // Highlight the dominant profile row
+        if (t === report.type) {
+          row.classList.add('active');
+        } else {
+          row.classList.remove('active');
+        }
+      });
+    }
+
+    // Restart Test
+    function restartTest() {
+      engine.reset();
+      showView('viewWelcome');
+    }
+
   </script>
 </body>
 </html>
