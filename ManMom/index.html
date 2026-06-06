@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>依存与独立性测试 - NEO-TEST 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../index.css">
+  <style>
+    .placeholder-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 60vh;
+      padding: 2rem 0;
+    }
+    .dev-icon {
+      font-size: 3rem;
+      font-family: var(--font-mono);
+      margin-bottom: 2rem;
+      color: var(--text-secondary);
+      border: 1px dashed var(--border-hover);
+      padding: 1.5rem;
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: spin-slow 10s linear infinite;
+    }
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .placeholder-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+    }
+    .placeholder-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+      line-height: 1.6;
+      margin-bottom: 3rem;
+    }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--text-primary);
+      color: var(--accent-inverse);
+      padding: 0.8rem 1.8rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      border: 1px solid var(--text-primary);
+      transition: var(--transition-fast);
+    }
+    .btn-back:hover {
+      background-color: transparent;
+      color: var(--text-primary);
+    }
+    .btn-back svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <span class="status-dot" style="background-color: var(--text-secondary);"></span>
+        <span>NEO-TEST // 2026</span>
+      </a>
+      <div class="header-controls">
+        <span class="system-status">MODULE: MANMOM</span>
+        <button class="theme-toggle" id="themeToggleBtn" aria-label="切换主题" title="切换黑白主题">
+          <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <div class="placeholder-container">
+      <div class="dev-icon">MM</div>
+      <h1 class="placeholder-title">依存与独立性测试</h1>
+      <p class="placeholder-desc">
+        该模块的依存关系动力学测试量表与指标权重分析模块正在进行最终算法验证，预计将于近期完成联调。
+      </p>
+      <a href="../index.html" class="btn-back">
+        <svg fill="none" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor"/></svg>
+        返回主控台
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <div>&copy; 2026 NEO-TEST CORE. ALL RIGHTS RESERVED.</div>
+      </div>
+      <div class="footer-right">
+        <a href="../index.html" class="footer-link">主控台</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme Toggle Handler
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    const darkIconPath = "M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z";
+    const lightIconPath = "M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zm14.142 14.142l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM3.515 19.071l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414zm14.142-14.142l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414z";
+
+    // Set theme on load
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    htmlEl.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    themeBtn.addEventListener('click', () => {
+      const currentTheme = htmlEl.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      htmlEl.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    });
+
+    function updateThemeIcon(theme) {
+      if (theme === 'dark') {
+        themeIcon.setAttribute('viewBox', '0 0 24 24');
+        themeIcon.innerHTML = `<path d="${darkIconPath}"/>`;
+      } else {
+        themeIcon.setAttribute('viewBox', '0 0 24 24');
+        themeIcon.innerHTML = `<path d="${lightIconPath}"/>`;
+      }
+    }
+  </script>
+</body>
+</html>

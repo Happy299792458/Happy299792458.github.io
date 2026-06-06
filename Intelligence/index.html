@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>智商与认知测试 - 2026测试系统</title>
+  <meta name="description" content="本测试采用标准智力分布曲线以及最新智力测试题目，可以将您的智商测得非常准确。">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Shared Stylesheet -->
+  <link rel="stylesheet" href="../index.css">
+  
+  <!-- Module Specific Styles -->
+  <style>
+    .module-wrapper {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+    }
+    
+    .panel {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3rem 2.5rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition-smooth);
+    }
+    
+    /* Step 1: Welcome */
+    .intro-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .intro-header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    .intro-header p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .intro-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .feature-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      background-color: var(--bg-primary);
+    }
+    .feature-card h3 {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    .feature-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    /* Step 2: Testing Interface */
+    .test-progress-bar {
+      width: 100%;
+      height: 4px;
+      background-color: var(--bg-tertiary);
+      border-radius: 2px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: var(--text-primary);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .test-stats-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .question-box {
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .question-label {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .question-text {
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+    .actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .btn {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 1.1rem;
+      padding: 1.25rem;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition-smooth);
+      border: 1px solid var(--text-primary);
+      background-color: transparent;
+      color: var(--text-primary);
+      outline: none;
+    }
+    .btn:hover {
+      background-color: var(--text-primary);
+      color: var(--accent-inverse);
+    }
+    .btn-primary {
+      background-color: var(--text-primary);
+      color: var(--accent-inverse);
+    }
+    .btn-primary:hover {
+      background-color: transparent;
+      color: var(--text-primary);
+    }
+    
+    /* Live Engine Monitor */
+    .engine-monitor {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .monitor-title {
+      font-weight: 500;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .monitor-val {
+      color: var(--text-primary);
+    }
+    
+    /* Step 3: Result dashboard */
+    .result-score-container {
+      text-align: center;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2.5rem;
+    }
+    .result-score-label {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .result-score-val {
+      font-size: 5.5rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      text-shadow: var(--glow);
+    }
+    .result-class-badge {
+      display: inline-block;
+      border: 1px solid var(--text-primary);
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .result-class-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+    
+    /* Normal Curve Canvas Wrapper */
+    .chart-container {
+      margin: 3rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .chart-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    #curveCanvas {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-width: 100%;
+    }
+    
+    /* History breakdown list */
+    .history-section {
+      margin-top: 4rem;
+      border-top: 1px dashed var(--border);
+      padding-top: 3rem;
+    }
+    .history-title {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .history-table th {
+      text-align: left;
+      color: var(--text-secondary);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+    .history-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .history-table tr:hover td {
+      color: var(--text-primary);
+      background-color: var(--bg-primary);
+    }
+    .history-val-highlight {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    /* Views State Management */
+    .view-step {
+      display: none;
+    }
+    .view-step.active {
+      display: block;
+    }
+    
+    /* Responsive styling */
+    @media (max-width: 600px) {
+      .module-wrapper {
+        margin: 2rem auto;
+      }
+      .panel {
+        padding: 2rem 1.5rem;
+      }
+      .intro-features {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .question-text {
+        font-size: 1.6rem;
+      }
+      .actions-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .result-score-val {
+        font-size: 4rem;
+      }
+      .history-table th:nth-child(4),
+      .history-table td:nth-child(4) {
+        display: none; /* Hide bounds column on mobile */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <span class="status-dot"></span>
+        <span>2026测试系统</span>
+      </a>
+      <div class="header-controls">
+        <span class="system-status">模块：智商与认知测试</span>
+        <button class="theme-toggle" id="themeToggleBtn" aria-label="切换主题" title="切换黑白主题">
+          <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="module-wrapper">
+    <div class="panel">
+      
+      <!-- STEP 1: WELCOME SCREEN -->
+      <div id="viewWelcome" class="view-step active">
+        <div class="intro-header">
+          <h1>智商与认知能力测试</h1>
+          <p>本测试采用标准智力分布曲线以及最新智力测试题目，可以将您的智商测得非常准确。</p>
+        </div>
+        
+        <div class="intro-features">
+          <div class="feature-card">
+            <h3>01 / 自适应查找</h3>
+            <p>测试不设固定题目。系统根据您的回答动态调整下一个划分点，用最少的问题精准测定您的智商边界。</p>
+          </div>
+          <div class="feature-card">
+            <h3>02 / 连击政策</h3>
+            <p>对于大部分受试者，测试在 10 题内收敛并结束。但若表现处于极端的极高（天才）或极低（弱智）区间，测试会自动追加题目以进一步下探或上探阈值。</p>
+          </div>
+          <div class="feature-card">
+            <h3>03 / 正态分布</h3>
+            <p>智商评定基准均值为 100，标准差为 15。测试结束后将给出您在全人类智力分布中的百分比排位。</p>
+          </div>
+          <div class="feature-card">
+            <h3>04 / 极简架构</h3>
+            <p>纯本地解析算法运行，毫秒级响应，完美的响应式适配方案。</p>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="startTest()">立即开始测试</button>
+      </div>
+
+      <!-- STEP 2: ACTIVE TESTING SCREEN -->
+      <div id="viewTesting" class="view-step">
+        <div class="test-progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        
+        <div class="test-stats-row">
+          <div>当前题号: <span id="lblQuestionIndex" class="history-val-highlight">01</span></div>
+          <div>当前精度: <span id="lblUncertainty" class="history-val-highlight">误差 ± 75.0</span></div>
+        </div>
+        
+        <div class="question-box">
+          <div class="question-label" id="lblQuestionCode">节点：智商_01_二分</div>
+          <div class="question-text" id="lblQuestionText">你的智商是否高于 100？</div>
+        </div>
+        
+        <div class="actions-row">
+          <button class="btn btn-primary" onclick="handleResponse('yes')">是</button>
+          <button class="btn" onclick="handleResponse('no')">否</button>
+        </div>
+        
+        <div class="engine-monitor">
+          <div class="monitor-title">
+            <span>自适应引擎状态监视器</span>
+            <span style="color: var(--text-tertiary);">运行中</span>
+          </div>
+          <div>左概率边界 : <span id="monL" class="monitor-val">0.00000000</span></div>
+          <div>右概率边界 : <span id="monR" class="monitor-val">1.00000000</span></div>
+          <div>分割百分比 : <span id="monP" class="monitor-val">0.50000000</span></div>
+          <div>标准正态偏离 : <span id="monZ" class="monitor-val">0.0000</span></div>
+          <div>实时收敛状态 : <span id="monStatus" style="color: var(--text-primary);">等待首个回答...</span></div>
+        </div>
+      </div>
+
+      <!-- STEP 3: RESULTS SCREEN -->
+      <div id="viewResults" class="view-step">
+        <div class="result-score-container">
+          <div class="result-score-label">您的智力评估结果</div>
+          <div class="result-score-val" id="resIQ">100</div>
+          <div class="result-class-badge" id="resClassBadge">一般人</div>
+          <div class="result-class-desc" id="resClassDesc">
+            您的脑力推理表现处于标准分布的核心区间。
+          </div>
+        </div>
+
+        <!-- Dynamic Chart -->
+        <div class="chart-container">
+          <span class="chart-title">标准智商正态分布曲线及您的定位</span>
+          <canvas id="curveCanvas"></canvas>
+        </div>
+
+        <div class="engine-monitor" style="margin-bottom: 2rem;">
+          <div class="monitor-title">统计定位数据</div>
+          <div>● 人群超越率: <span id="resPercentile" class="monitor-val">50.0000%</span></div>
+          <div>● 人群稀有度: <span id="resRarity" class="monitor-val">每 2 个人中有 1 个</span></div>
+          <div>● 测试终止原因: <span id="resReason" class="monitor-val">-</span></div>
+        </div>
+
+        <!-- History Breakdown -->
+        <div class="history-section">
+          <h3 class="history-title">收敛路径与判定决策日志</h3>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>步骤</th>
+                <th>划定判定值</th>
+                <th>您的回答</th>
+                <th>判定区间</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="margin-top: 3rem; display: flex; gap: 1rem;">
+          <button class="btn btn-primary" style="flex: 1;" onclick="restartTest()">重新测试</button>
+          <a href="../index.html" class="btn" style="flex: 1; text-decoration: none;">返回主控台</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <div>&copy; 2026 智商测试中心。保留所有权利。</div>
+      </div>
+      <div class="footer-right">
+        <a href="../index.html" class="footer-link">主控台</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Load Engine and Local Script -->
+  <script src="engine.js"></script>
+  <script>
+    // Instantiate test engine
+    const engine = new IQTestEngine();
+
+    // Theme Toggle Handler (Sync with localstorage and parent stylesheet)
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    const darkIconPath = "M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z";
+    const lightIconPath = "M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zm14.142 14.142l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM3.515 19.071l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414zm14.142-14.142l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414z";
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    htmlEl.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    themeBtn.addEventListener('click', () => {
+      const currentTheme = htmlEl.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      htmlEl.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+      
+      // Redraw curve on theme change if visible
+      if (engine.isFinished) {
+        renderNormalDistributionChart();
+      }
+    });
+
+    function updateThemeIcon(theme) {
+      if (theme === 'dark') {
+        themeIcon.setAttribute('viewBox', '0 0 24 24');
+        themeIcon.innerHTML = `<path d="${darkIconPath}"/>`;
+      } else {
+        themeIcon.setAttribute('viewBox', '0 0 24 24');
+        themeIcon.innerHTML = `<path d="${lightIconPath}"/>`;
+      }
+    }
+
+    // Step View Transition Manager
+    function showView(viewId) {
+      document.querySelectorAll('.view-step').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    // Locale configuration store (Default fallbacks for offline CORS compatibility)
+    window.LOCALE = {
+      "页面标题": "智商与认知测试 - 2026测试系统",
+      "页面元描述": "本测试采用标准智力分布曲线以及最新智力测试题目，可以将您的智商测得非常准确。",
+      "系统标志": "2026测试系统",
+      "系统模块名称": "模块：智商与认知测试",
+      "切换主题提示": "切换黑白主题",
+      "欢迎页标题": "智商与认知能力测试",
+      "欢迎页描述": "本测试采用标准智力分布曲线以及最新智力测试题目，可以将您的智商测得非常准确。",
+      "特色卡片1标题": "01 / 自适应查找",
+      "特色卡片1内容": "测试不设固定题目。系统根据您的回答动态调整下一个划分点，用最少的问题精准测定您的智商边界。",
+      "特色卡片2标题": "02 / 连击政策",
+      "特色卡片2内容": "对于大部分受试者，测试在 10 题内收敛并结束。但若表现处于极端的极高（天才）或极低（弱智）区间，测试会自动追加题目以进一步下探或上探阈值。",
+      "特色卡片3标题": "03 / 正态分布",
+      "特色卡片3内容": "智商评定基准均值为 100，标准差为 15。测试结束后将给出您在全人类智力分布中的百分比排位。",
+      "特色卡片4标题": "04 / 极简架构",
+      "特色卡片4内容": "纯本地解析算法运行，毫秒级响应，完美的响应式适配方案。",
+      "开始测试按钮": "立即开始测试",
+      "当前题号标签": "当前题号",
+      "当前精度标签": "当前精度",
+      "误差前缀": "误差 ±",
+      "节点标签": "节点：智商_",
+      "节点标签后缀": "_二分",
+      "问题模板": "你的智商是否高于 [VALUE]？",
+      "是按钮": "是",
+      "否按钮": "否",
+      "控制台标题": "自适应引擎状态监视器",
+      "控制台运行状态": "运行中",
+      "控制台左边界": "左概率边界",
+      "控制台右边界": "右概率边界",
+      "控制台分割点": "分割百分比",
+      "控制台偏离度": "标准正态偏离",
+      "控制台实时收敛状态": "实时收敛状态",
+      "状态等待首次回答": "等待首个回答...",
+      "状态正在处理回答": "正在处理回答：",
+      "状态等待输入": "等待输入...",
+      "结果页大标题": "您的智力评估结果",
+      "结果页图表标题": "标准智商正态分布曲线及您的定位",
+      "图表定位您标签": "您",
+      "结果统计定位数据标题": "统计定位数据",
+      "人群超越率标签": "人群超越率",
+      "人群稀有度标签": "人群稀有度",
+      "终止原因标签": "测试终止原因",
+      "决策日志标题": "收敛路径与判定决策日志",
+      "表格表头步骤": "步骤",
+      "表格表头判定值": "划定判定值",
+      "表格表头您的回答": "您的回答",
+      "表格表头判定区间": "判定区间",
+      "步骤前缀": "第 [INDEX] 步",
+      "高于判定值模板": "高于 [VALUE] ？",
+      "表格单元格是": "是",
+      "表格单元格否": "否",
+      "上限文本": "200以上",
+      "重新测试按钮": "重新测试",
+      "返回主控台按钮": "返回主控台",
+      "页脚版权": "智商测试中心。保留所有权利。",
+      "页脚主控台": "主控台",
+      "收敛原因重复": "整数精度分辨上限 (下一分割点为重复整数)",
+      "收敛原因边界": "整数边界完全重合 (区间无法再分出新整数)",
+      "收敛原因上限": "已达标准收敛上限 (10道题测试周期结束)",
+      "收敛原因极值": "计算精度极限收敛 (区间极度缩小)",
+      "分类超级天才标签": "超级天才",
+      "分类超级天才内容": "恭喜！您的智商在人类中的地位，就好比亚里士多德在力学中的地位，牛顿在波动光学中的地位，拉瓦锡在热力学中的地位。或许您应当成为类人！",
+      "分类天才标签": "天才",
+      "分类天才内容": "您的智商显著高于人群平均水平，具备极其出色的抽象推理、空间逻辑与分析处理能力。",
+      "分类一般人标签": "一般人",
+      "分类一般人内容": "您的智力水平处于标准正态分布的核心区间，与全球绝大多数人持平。",
+      "分类弱智标签": "弱智",
+      "分类弱智内容": "您的脑力推理表现处于临界阈值，在复杂逻辑推演中可能会遇到一定障碍。",
+      "分类超级弱智标签": "超级弱智",
+      "分类超级弱智内容": "您是怎么看懂题目的？然而，这并不是说您是一个蠢货，因为您仍有别的用武之地！或许您应当去遗传与发育生物学研究所获取一份工作。"
+    };
+
+    // Attempt to load from external JSON configuration
+    async function loadLocale() {
+      try {
+        const response = await fetch('locale.json');
+        if (response.ok) {
+          const fetched = await response.json();
+          // Merge external locale configurations
+          Object.assign(window.LOCALE, fetched);
+          console.log('[SYSTEM] locale.json loaded and merged successfully.');
+        }
+      } catch (err) {
+        console.log('[SYSTEM] CORS restriction or network error loading locale.json, falling back to embedded default values.', err);
+      }
+      applyLocale();
+    }
+
+    // Apply translations to DOM
+    function applyLocale() {
+      document.title = window.LOCALE.页面标题;
+      
+      const logoEl = document.querySelector('.logo span:nth-child(2)');
+      if (logoEl) logoEl.textContent = window.LOCALE.系统标志;
+      
+      const statusEl = document.querySelector('.system-status');
+      if (statusEl) statusEl.textContent = window.LOCALE.系统模块名称;
+      
+      const toggleEl = document.getElementById('themeToggleBtn');
+      if (toggleEl) toggleEl.title = window.LOCALE.切换主题提示;
+
+      // Welcome Screen
+      const wHeader = document.querySelector('#viewWelcome .intro-header h1');
+      if (wHeader) wHeader.textContent = window.LOCALE.欢迎页标题;
+      
+      const wSub = document.querySelector('#viewWelcome .intro-header p');
+      if (wSub) wSub.textContent = window.LOCALE.欢迎页描述;
+      
+      const features = document.querySelectorAll('#viewWelcome .feature-card');
+      if (features.length >= 4) {
+        features[0].querySelector('h3').textContent = window.LOCALE.特色卡片1标题;
+        features[0].querySelector('p').textContent = window.LOCALE.特色卡片1内容;
+        
+        features[1].querySelector('h3').textContent = window.LOCALE.特色卡片2标题;
+        features[1].querySelector('p').textContent = window.LOCALE.特色卡片2内容;
+        
+        features[2].querySelector('h3').textContent = window.LOCALE.特色卡片3标题;
+        features[2].querySelector('p').textContent = window.LOCALE.特色卡片3内容;
+        
+        features[3].querySelector('h3').textContent = window.LOCALE.特色卡片4标题;
+        features[3].querySelector('p').textContent = window.LOCALE.特色卡片4内容;
+      }
+      
+      const wBtn = document.querySelector('#viewWelcome button');
+      if (wBtn) wBtn.textContent = window.LOCALE.开始测试按钮;
+
+      // Testing Screen
+      const activeConsoleTitle = document.querySelector('#viewTesting .engine-monitor .monitor-title span:nth-child(1)');
+      if (activeConsoleTitle) activeConsoleTitle.textContent = window.LOCALE.控制台标题;
+      
+      const activeConsoleStatus = document.querySelector('#viewTesting .engine-monitor .monitor-title span:nth-child(2)');
+      if (activeConsoleStatus) activeConsoleStatus.textContent = window.LOCALE.控制台运行状态;
+
+      // Results Screen
+      const resLabel = document.querySelector('#viewResults .result-score-container .result-score-label');
+      if (resLabel) resLabel.textContent = window.LOCALE.结果页大标题;
+      
+      const chartLabel = document.querySelector('#viewResults .chart-container .chart-title');
+      if (chartLabel) chartLabel.textContent = window.LOCALE.结果页图表标题;
+      
+      const statsTitle = document.querySelector('#viewResults .engine-monitor .monitor-title');
+      if (statsTitle) statsTitle.textContent = window.LOCALE.结果统计定位数据标题;
+
+      const decisionalTitle = document.querySelector('#viewResults .history-section .history-title');
+      if (decisionalTitle) decisionalTitle.textContent = window.LOCALE.决策日志标题;
+
+      const ths = document.querySelectorAll('#viewResults .history-section table th');
+      if (ths.length >= 4) {
+        ths[0].textContent = window.LOCALE.表格表头步骤;
+        ths[1].textContent = window.LOCALE.表格表头判定值;
+        ths[2].textContent = window.LOCALE.表格表头您的回答;
+        ths[3].textContent = window.LOCALE.表格表头判定区间;
+      }
+
+      const resBtns = document.querySelectorAll('#viewResults div[style*="margin-top: 3rem"] button, #viewResults div[style*="margin-top: 3rem"] a');
+      if (resBtns.length >= 2) {
+        resBtns[0].textContent = window.LOCALE.重新测试按钮;
+        resBtns[1].textContent = window.LOCALE.返回主控台按钮;
+      }
+
+      // Footer
+      const footerCopyright = document.querySelector('.site-footer .footer-left div:nth-child(1)');
+      if (footerCopyright) footerCopyright.innerHTML = `&copy; 2026 ${window.LOCALE.页脚版权}`;
+      
+      const footerLink = document.querySelector('.site-footer .footer-right a');
+      if (footerLink) footerLink.textContent = window.LOCALE.页脚主控台;
+    }
+
+    // Start Test
+    function startTest() {
+      engine.reset();
+      showView('viewTesting');
+      updateTestingView();
+    }
+
+    // Response handler
+    function handleResponse(ans) {
+      document.getElementById('monStatus').innerHTML = `${window.LOCALE.状态正在处理回答}<span style="font-weight: 500;">${ans === 'yes' ? window.LOCALE.是按钮 : window.LOCALE.否按钮}</span>...`;
+      
+      engine.submitAnswer(ans);
+      
+      setTimeout(() => {
+        if (engine.isFinished) {
+          showResults();
+        } else {
+          updateTestingView();
+        }
+      }, 300);
+    }
+
+    // Update Testing UI Elements
+    function updateTestingView() {
+      const q = engine.getCurrentQuestion();
+      if (!q) return;
+
+      document.getElementById('lblQuestionIndex').textContent = q.index.toString().padStart(2, '0');
+      document.getElementById('lblQuestionCode').textContent = `${window.LOCALE.节点标签}${q.index.toString().padStart(2, '0')}${window.LOCALE.节点标签后缀}`;
+      document.getElementById('lblQuestionText').textContent = window.LOCALE.问题模板.replace('[VALUE]', q.targetValue);
+
+      // Set uncertainty label
+      const curL = getIQFromPercentile(engine.L > 0 ? engine.L : 0.0000001);
+      const curR = getIQFromPercentile(engine.R < 1 ? engine.R : 0.9999999);
+      const uncertainty = (curR - curL) / 2;
+      document.getElementById('lblUncertainty').textContent = `${window.LOCALE.误差前缀}${uncertainty.toFixed(1)}`;
+
+      // Update progress bar width
+      const rangeWidth = engine.R - engine.L;
+      const progressPercent = Math.min(95, Math.max(5, (1 - rangeWidth) * 100));
+      const fillEl = document.getElementById('progressFill');
+      if (fillEl) fillEl.style.width = `${progressPercent}%`;
+
+      // Update Live Console Metrics
+      const monLEl = document.getElementById('monL');
+      if (monLEl) monLEl.textContent = engine.L.toFixed(8);
+      
+      const monREl = document.getElementById('monR');
+      if (monREl) monREl.textContent = engine.R.toFixed(8);
+      
+      const nextP = (engine.L + engine.R) / 2;
+      const monPEl = document.getElementById('monP');
+      if (monPEl) monPEl.textContent = nextP.toFixed(8);
+      
+      const monZEl = document.getElementById('monZ');
+      if (monZEl) monZEl.textContent = q.zScore.toFixed(4);
+      
+      const monStatusEl = document.getElementById('monStatus');
+      if (monStatusEl) monStatusEl.textContent = window.LOCALE.状态等待输入;
+    }
+
+    // Show results
+    function showResults() {
+      showView('viewResults');
+      
+      document.getElementById('resIQ').textContent = engine.finalIQ.toString();
+      
+      const classification = engine.getIQClassification();
+      document.getElementById('resClassBadge').textContent = classification.label;
+      document.getElementById('resClassDesc').textContent = classification.desc;
+
+      const rarity = engine.getRarityStatement();
+      document.getElementById('resPercentile').textContent = `${rarity.beats}%`;
+      document.getElementById('resRarity').textContent = rarity.ratio;
+
+      // Translate Stop Reason to readable Chinese
+      const stopReasonChinese = {
+        "RESOLUTION_LIMIT_DUPLICATE": window.LOCALE.收敛原因重复,
+        "RESOLUTION_LIMIT_BOUNDS": window.LOCALE.收敛原因边界,
+        "STANDARD_LIMIT_REACHED": window.LOCALE.收敛原因上限,
+        "MATH_LIMIT_REACHED": window.LOCALE.收敛原因极值
+      };
+      document.getElementById('resReason').textContent = stopReasonChinese[engine.stopReason] || engine.stopReason;
+
+      // Populate history table
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+      
+      engine.history.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        const tdIdx = document.createElement('td');
+        tdIdx.textContent = window.LOCALE.步骤前缀.replace('[INDEX]', item.qIndex);
+        
+        const tdVal = document.createElement('td');
+        tdVal.className = 'history-val-highlight';
+        tdVal.textContent = window.LOCALE.高于判定值模板.replace('[VALUE]', item.questionValue);
+        
+        const tdAns = document.createElement('td');
+        tdAns.innerHTML = item.answer === 'yes' ? 
+          `<span style="color: var(--text-primary); font-weight:600;">${window.LOCALE.表格单元格是}</span>` : 
+          `<span>${window.LOCALE.表格单元格否}</span>`;
+        
+        const tdBounds = document.createElement('td');
+        const lIQ = Math.round(getIQFromPercentile(item.bounds.L > 0 ? item.bounds.L : 0.0000001));
+        const rIQ = Math.round(getIQFromPercentile(item.bounds.R < 1 ? item.bounds.R : 0.9999999));
+        tdBounds.textContent = `[${lIQ === 10 ? '0' : lIQ}, ${rIQ === 190 ? window.LOCALE.上限文本 : rIQ}]`;
+
+        tr.appendChild(tdIdx);
+        tr.appendChild(tdVal);
+        tr.appendChild(tdAns);
+        tr.appendChild(tdBounds);
+        
+        tbody.appendChild(tr);
+      });
+
+      // Render chart
+      renderNormalDistributionChart();
+    }
+
+    // High DPI Canvas Drawing
+    function renderNormalDistributionChart() {
+      const canvas = document.getElementById('curveCanvas');
+      if (!canvas) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.min(700, canvas.parentElement.clientWidth - 10);
+      const height = 220;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      // Extract colors from CSS tokens
+      const bodyStyle = getComputedStyle(document.body);
+      const textPrimary = bodyStyle.getPropertyValue('--text-primary').trim();
+      const textSecondary = bodyStyle.getPropertyValue('--text-secondary').trim();
+      const border = bodyStyle.getPropertyValue('--border-hover').trim() || bodyStyle.getPropertyValue('--border').trim();
+
+      const margin = 30;
+      const curveWidth = width - 2 * margin;
+      const curveHeight = height - 50;
+      const zeroX = margin + curveWidth / 2;
+      const zeroY = height - 20;
+
+      // Probability density function of standard normal distribution
+      function pdf(z) {
+        return (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * z * z);
+      }
+
+      const zScore = engine.finalZScore;
+      const maxPdf = pdf(0);
+
+      // 1. Draw Shaded Percentile Area
+      ctx.fillStyle = htmlEl.getAttribute('data-theme') === 'light' ? 
+        'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.moveTo(margin, zeroY);
+      
+      const points = 150;
+      for (let i = 0; i <= points; i++) {
+        const t = i / points;
+        const z = -3.5 + 7.0 * t;
+        const x = margin + t * curveWidth;
+        const y = zeroY - (pdf(z) / maxPdf) * curveHeight;
+        
+        if (z <= zScore) {
+          ctx.lineTo(x, y);
+        }
+      }
+      const userX = margin + ((zScore + 3.5) / 7.0) * curveWidth;
+      ctx.lineTo(userX, zeroY);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Draw Full Normal Curve Line
+      ctx.strokeStyle = textPrimary;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= points; i++) {
+        const t = i / points;
+        const z = -3.5 + 7.0 * t;
+        const x = margin + t * curveWidth;
+        const y = zeroY - (pdf(z) / maxPdf) * curveHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 3. Draw User Indicator vertical dashed line
+      if (zScore >= -3.5 && zScore <= 3.5) {
+        ctx.strokeStyle = textPrimary;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(userX, zeroY);
+        ctx.lineTo(userX, zeroY - (pdf(zScore) / maxPdf) * curveHeight);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Highlight User Dot
+        ctx.fillStyle = textPrimary;
+        ctx.beginPath();
+        ctx.arc(userX, zeroY - (pdf(zScore) / maxPdf) * curveHeight, 5, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Label YOU -> 您
+        ctx.font = 'bold 9px var(--font-mono)';
+        ctx.fillStyle = textPrimary;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${window.LOCALE.图表定位您标签} (${engine.finalIQ})`, userX, zeroY - (pdf(zScore) / maxPdf) * curveHeight - 12);
+      }
+
+      // 4. Draw Baseline axis
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(margin, zeroY);
+      ctx.lineTo(width - margin, zeroY);
+      ctx.stroke();
+
+      // 5. Draw IQ Axis Labels
+      ctx.font = '9px var(--font-mono)';
+      ctx.fillStyle = textSecondary;
+      ctx.textAlign = 'center';
+      
+      const labels = [
+        { iq: 55, z: -3.0 },
+        { iq: 70, z: -2.0 },
+        { iq: 85, z: -1.0 },
+        { iq: 100, z: 0.0 },
+        { iq: 115, z: 1.0 },
+        { iq: 130, z: 2.0 },
+        { iq: 145, z: 3.0 }
+      ];
+      
+      labels.forEach(lbl => {
+        const x = margin + ((lbl.z + 3.5) / 7.0) * curveWidth;
+        ctx.fillText(lbl.iq.toString(), x, zeroY + 14);
+      });
+    }
+
+    // Restart Test
+    function restartTest() {
+      engine.reset();
+      showView('viewWelcome');
+    }
+
+    // Redraw normal curve if window resizes (handles screen rotation or flex layout shifts)
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (engine.isFinished) {
+          renderNormalDistributionChart();
+        }
+      }, 300);
+    });
+
+    // Run locale loading on load
+    loadLocale();
+
+  </script>
+</body>
+</html>
