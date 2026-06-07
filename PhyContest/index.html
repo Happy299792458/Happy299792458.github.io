@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>高中物理竞赛测试 - 2026测试系统</title>
+  <meta name="description" content="专为高中物理竞赛爱好者设计的瞬时心算与高速反应测试。">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Shared Stylesheet -->
+  <link rel="stylesheet" href="../index.css">
+  
+  <!-- Module Specific Styles -->
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      background-color: var(--bg-primary);
+      /* Grid Overlay Background synced from design system */
+      background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: center top;
+      transition: background-color 0.4s ease;
+    }
+    
+    .game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .hud-bar {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      background-color: rgba(10, 10, 10, 0.85);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      z-index: 10;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(4px);
+    }
+    
+    [data-theme="light"] .hud-bar {
+      background-color: rgba(255, 255, 255, 0.85);
+    }
+    
+    #gameCanvas {
+      background-color: var(--bg-secondary);
+      border: none;
+      cursor: ew-resize;
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <!-- Top-Right Score HUD -->
+    <div class="hud-bar">SCORE: <span id="lblScore">10</span></div>
+    
+    <!-- Game View Canvas -->
+    <canvas id="gameCanvas" tabindex="0"></canvas>
+  </div>
+
+  <!-- Load Game Engine -->
+  <script src="engine.js"></script>
+  <script>
+    let game = null;
+
+    // Apply global theme configuration on load
+    const htmlEl = document.documentElement;
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    htmlEl.setAttribute('data-theme', savedTheme);
+
+    // Auto start game on content loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      // Instantiate game engine (telemetry console is null as it's removed)
+      game = new PhysicsContestGame('gameCanvas', 'lblScore', null);
+      
+      // Handle canvas resize
+      window.addEventListener('resize', () => {
+        if (game) game.resize();
+      });
+
+      // Auto start and grab input focus
+      game.start();
+      document.getElementById('gameCanvas').focus();
+    });
+  </script>
+</body>
+</html>
