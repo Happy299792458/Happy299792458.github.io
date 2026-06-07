@@ -58,6 +58,10 @@
       z-index: 10;
       letter-spacing: 0.05em;
       backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
     }
     
     [data-theme="light"] .hud-bar {
@@ -81,6 +85,10 @@
       letter-spacing: 0.05em;
       backdrop-filter: blur(4px);
       box-shadow: var(--shadow);
+      max-width: 15em;
+      text-align: center;
+      line-height: 1.4;
+      word-break: break-all;
     }
 
     [data-theme="light"] .award-bar {
@@ -102,7 +110,11 @@
 
   <div class="game-container">
     <div class="award-bar" id="lblAward">当前奖项: 铁牌</div>
-    <div class="hud-bar" id="lblScore">决赛: 0 &nbsp;|&nbsp; 复赛: 0 &nbsp;|&nbsp; 预赛: 10</div>
+    <div class="hud-bar" id="lblScore">
+      <span>预赛: 10</span>
+      <span>复赛: 0</span>
+      <span>决赛: 0</span>
+    </div>
     
     <!-- Game View Canvas -->
     <canvas id="gameCanvas" tabindex="0"></canvas>

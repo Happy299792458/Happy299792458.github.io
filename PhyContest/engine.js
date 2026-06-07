@@ -114,7 +114,8 @@ class PhysicsContestGame {
 
     if (r > pNonMult) {
       // Multiplication operator (*)
-      const val = Math.random() > 0.5 ? 2 : 3;
+      const maxMult = 3 + tier * 2;
+      const val = Math.floor(Math.random() * (maxMult - 1)) + 2;
       return { op: '*', val: val };
     } else {
       // Non-multiplication operator (+, -, /)
@@ -224,6 +225,9 @@ class PhysicsContestGame {
     this.speedMultiplier = 1.0;
 
     this.updateScoreHUD();
+    
+    // Kick off the game loop
+    requestAnimationFrame((t) => this.gameLoop(t));
   }
 
   stop() {
@@ -251,8 +255,22 @@ class PhysicsContestGame {
     const tier = this.getAwardTier(finals);
 
     // Generate operators based on tier probability
-    const op1 = this.generateSingleOp(tier);
-    const op2 = this.generateSingleOp(tier);
+    let op1 = this.generateSingleOp(tier);
+    let op2 = this.generateSingleOp(tier);
+
+    let type1 = op1.op === '*' || op1.op === '+' ? 'good' : 'bad';
+    let type2 = op2.op === '*' || op2.op === '+' ? 'good' : 'bad';
+
+    // Ensure at least one beneficial block per row
+    while (type1 === 'bad' && type2 === 'bad') {
+      if (Math.random() > 0.5) {
+        op1 = this.generateSingleOp(tier);
+        type1 = op1.op === '*' || op1.op === '+' ? 'good' : 'bad';
+      } else {
+        op2 = this.generateSingleOp(tier);
+        type2 = op2.op === '*' || op2.op === '+' ? 'good' : 'bad';
+      }
+    }
 
     this.blocks.push({
       rowId: rowId,
@@ -265,7 +283,7 @@ class PhysicsContestGame {
       val: op1.val,
       text: `${op1.op === '*' ? '×' : op1.op === '/' ? '÷' : op1.op}${op1.val}`,
       speed: blockSpeed,
-      type: op1.op === '*' || op1.op === '+' ? 'good' : 'bad'
+      type: type1
     });
 
     this.blocks.push({
@@ -279,7 +297,7 @@ class PhysicsContestGame {
       val: op2.val,
       text: `${op2.op === '*' ? '×' : op2.op === '/' ? '÷' : op2.op}${op2.val}`,
       speed: blockSpeed,
-      type: op2.op === '*' || op2.op === '+' ? 'good' : 'bad'
+      type: type2
     });
   }
 
@@ -304,9 +322,6 @@ class PhysicsContestGame {
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnBlocks();
       this.spawnTimer = 0;
-
-      // Slowly increase speed multiplier to scale difficulty
-      this.speedMultiplier = Math.min(2.0, this.speedMultiplier + 0.03);
     }
 
     // 2. Player 1D Horizontal Physics Update
@@ -440,7 +455,7 @@ class PhysicsContestGame {
     const finals = Math.floor(tempSemis / 400);
 
     if (this.scoreHud) {
-      this.scoreHud.innerHTML = `决赛: ${finals} &nbsp;|&nbsp; 复赛: ${semis} &nbsp;|&nbsp; 预赛: ${prelims}`;
+      this.scoreHud.innerHTML = `<span>预赛: ${prelims}</span><span>复赛: ${semis}</span><span>决赛: ${finals}</span>`;
     }
 
     if (this.awardHud) {
@@ -462,6 +477,7 @@ class PhysicsContestGame {
     const textPrimary = getStyleVal('--text-primary', '#ffffff');
     const textSecondary = getStyleVal('--text-secondary', '#8e8e93');
     const border = getStyleVal('--border', 'rgba(255, 255, 255, 0.08)');
+    const fontMono = getStyleVal('--font-mono', 'monospace');
 
     // Draw Lane Markings (Dashed vertical lines)
     this.ctx.strokeStyle = border;
@@ -531,7 +547,7 @@ class PhysicsContestGame {
 
       // Draw operator text
       this.ctx.fillStyle = b.type === 'good' ? textPrimary : textSecondary;
-      this.ctx.font = 'bold 12px var(--font-mono)';
+      this.ctx.font = `bold 12px ${fontMono}`;
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(b.text, b.x + b.width / 2, b.y + b.height / 2 + 1);
