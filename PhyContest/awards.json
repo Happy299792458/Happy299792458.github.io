@@ -1,0 +1,6 @@
+[
+  { "min": 0, "max": 0, "name": "铁牌", "tier": 0 },
+  { "min": 1, "max": 120, "name": "铜牌", "tier": 1 },
+  { "min": 121, "max": 220, "name": "银牌", "tier": 2 },
+  { "min": 221, "max": 400, "name": "金牌", "tier": 3 }
+]

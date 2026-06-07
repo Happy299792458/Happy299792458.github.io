@@ -1,16 +1,17 @@
 /**
  * Physics Contest Game Engine (2026 NEO-TEST CORE)
- * Implements smooth canvas-based rendering, inertia physics for the player block,
- * math block falling mechanics, particle effects, and score computation.
+ * Handles standard arithmetic operations (+, -, *, / represented as +, -, ×, ÷),
+ * horizontal movement clamping, auto-lane-triggering, score carrying, 
+ * and dynamic award tier generation.
  */
 
 class PhysicsContestGame {
-  constructor(canvasId, scoreHudId, telemetryId) {
+  constructor(canvasId, scoreHudId, awardHudId) {
     this.canvas = document.getElementById(canvasId);
     if (!this.canvas) throw new Error("Canvas element not found");
     this.ctx = this.canvas.getContext('2d');
     this.scoreHud = document.getElementById(scoreHudId);
-    this.telemetry = document.getElementById(telemetryId);
+    this.awardHud = document.getElementById(awardHudId);
 
     // Scaling for high DPI screens
     this.dpr = window.devicePixelRatio || 1;
@@ -18,42 +19,120 @@ class PhysicsContestGame {
     this.height = 400;
 
     // Game states
-    this.score = 10; // Initial score (must be integer and > 0)
+    this.score = 10; // Initial score (Preliminary score, clamped to integer > 0)
     this.isRunning = false;
     this.lastTime = 0;
     
     // Physics parameters
     this.player = {
       x: this.width / 2,
-      y: this.height - 40,
-      width: 60,
+      y: this.height - 80, // Constant vertical coordinate
+      width: 50,
       height: 15,
       targetX: this.width / 2, // for mouse/touch tracking
       vx: 0,                   // velocity for keyboard tracking
-      accel: 1500,             // keyboard acceleration pixels/sec^2
-      friction: 0.85,          // friction damping coefficient
-      maxSpeed: 500            // max speed pixels/sec
+      accel: 1800,             // keyboard acceleration pixels/sec^2
+      friction: 0.82,          // friction damping coefficient
+      maxSpeed: 600,           // max speed pixels/sec
+      minX: 0,
+      maxX: 0
     };
 
     this.blocks = [];
     this.particles = [];
-    this.logs = [];
+    this.awardsConfig = null;
 
     // Timing
     this.spawnInterval = 2000; // spawn a pair every 2 seconds
     this.spawnTimer = 0;
-    this.baseSpeed = 120;      // falling speed pixels/sec
     this.speedMultiplier = 1.0; // scales up slightly over time
 
     // Control mode: 'keyboard' or 'pointer'
     this.controlMode = 'keyboard';
     this.keys = { Left: false, Right: false };
 
+    // Load awards config from JSON
+    this.loadAwardsConfig();
+
     // Set up sizing
     this.resize();
 
     // Event listeners
     this.setupControls();
+  }
+
+  async loadAwardsConfig() {
+    try {
+      const response = await fetch('awards.json');
+      if (response.ok) {
+        this.awardsConfig = await response.json();
+        this.updateScoreHUD();
+      }
+    } catch (e) {
+      console.warn("Failed to load awards.json, using dynamic fallback.", e);
+    }
+  }
+
+  getAwardName(finals) {
+    if (this.awardsConfig) {
+      const config = this.awardsConfig.find(item => finals >= item.min && finals <= item.max);
+      if (config) return config.name;
+    } else {
+      // Fallback before awards.json loads
+      if (finals === 0) return "铁牌";
+      if (finals <= 120) return "铜牌";
+      if (finals <= 220) return "银牌";
+      if (finals <= 400) return "金牌";
+    }
+
+    // Dynamic calculation for higher tiers (400-4000 is "超强金牌", 4000-40000 is "超、超强金牌" etc.)
+    const power = Math.floor(Math.log10(finals / 4));
+    const numChao = Math.max(1, power - 1);
+    let chaoPrefix = "";
+    for (let i = 0; i < numChao; i++) {
+      chaoPrefix += "超" + (i === numChao - 1 ? "" : "、");
+    }
+    return chaoPrefix + "强金牌";
+  }
+
+  getAwardTier(finals) {
+    if (finals === 0) return 0; // 铁牌
+    if (finals <= 120) return 1; // 铜牌
+    if (finals <= 220) return 2; // 银牌
+    if (finals <= 400) return 3; // 金牌
+    
+    // Dynamic calculation for higher tiers
+    const power = Math.floor(Math.log10(finals / 4));
+    const numChao = Math.max(1, power - 1);
+    return numChao + 3;
+  }
+
+  generateSingleOp(tier) {
+    // Probability of non-multiplication blocks drops to half for each tier increase
+    const pNonMult = 0.8 * Math.pow(0.5, tier);
+    const r = Math.random();
+
+    if (r > pNonMult) {
+      // Multiplication operator (*)
+      const val = Math.random() > 0.5 ? 2 : 3;
+      return { op: '*', val: val };
+    } else {
+      // Non-multiplication operator (+, -, /)
+      const r2 = Math.random();
+      if (r2 < 0.45) {
+        // Addition (+)
+        const val = Math.floor(Math.random() * 9) + 1; // +1 to +9
+        return { op: '+', val: val };
+      } else if (r2 < 0.75) {
+        // Subtraction (-)
+        const val = Math.floor(Math.random() * 9) + 1; // -1 to -9
+        return { op: '-', val: val };
+      } else {
+        // Division (/)
+        const val = Math.random() > 0.5 ? 2 : 3; // /2 or /3
+        return { op: '/', val: val };
+      }
+    }
   }
 
   resize() {
@@ -64,19 +143,23 @@ class PhysicsContestGame {
     this.canvas.height = this.height * this.dpr;
     this.canvas.style.width = this.width + 'px';
     this.canvas.style.height = this.height + 'px';
-    this.ctx.scale(this.dpr, this.dpr);
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    // Adjust player Y relative to canvas height
-    this.player.y = this.height - 50;
+    // Limit horizontal movement based on page width
+    const rangeWidth = Math.min(500, this.width * 0.85);
+    this.player.minX = this.width / 2 - rangeWidth / 2;
+    this.player.maxX = this.width / 2 + rangeWidth / 2;
     
-    // Clamp player position
-    const halfW = this.player.width / 2;
-    this.player.x = Math.max(halfW, Math.min(this.width - halfW, this.player.x));
-    this.player.targetX = Math.max(halfW, Math.min(this.width - halfW, this.player.targetX));
+    // Y position remains constant
+    this.player.y = this.height - 80;
+
+    // Clamp player positions
+    this.player.x = Math.max(this.player.minX, Math.min(this.player.maxX, this.player.x));
+    this.player.targetX = Math.max(this.player.minX, Math.min(this.player.maxX, this.player.targetX));
   }
 
   setupControls() {
-    // Keyboard listeners
+    // Keyboard listeners (Horizontal only)
     window.addEventListener('keydown', (e) => {
       if (!this.isRunning) return;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
@@ -105,8 +188,8 @@ class PhysicsContestGame {
       if (rect.width === 0) return;
       // Convert CSS pixel clientX to canvas internal logical coordinate
       const relativeX = (clientX - rect.left) * (this.width / rect.width);
-      // Clamp within canvas boundaries
-      this.player.targetX = Math.max(this.player.width / 2, Math.min(this.width - this.player.width / 2, relativeX));
+      // Clamp within player horizontal boundary
+      this.player.targetX = Math.max(this.player.minX, Math.min(this.player.maxX, relativeX));
       this.controlMode = 'pointer';
     };
 
@@ -132,7 +215,6 @@ class PhysicsContestGame {
     this.score = 10;
     this.blocks = [];
     this.particles = [];
-    this.logs = [];
     this.isRunning = true;
     this.lastTime = performance.now();
     this.spawnTimer = this.spawnInterval; // spawn first set quickly
@@ -142,82 +224,62 @@ class PhysicsContestGame {
     this.speedMultiplier = 1.0;
 
     this.updateScoreHUD();
-    if (this.telemetry) this.telemetry.innerHTML = '';
-    this.logSystemEvent("TEST INITIATED: SCORE SET TO 10");
-
-    // Start loop
-    requestAnimationFrame((t) => this.gameLoop(t));
   }
 
   stop() {
     this.isRunning = false;
   }
 
-  generateOpPair() {
-    // Operations pool
-    const goodOps = [
-      { op: '+', val: 1 },
-      { op: '+', val: 2 },
-      { op: '+', val: 5 },
-      { op: '+', val: 10 },
-      { op: '*', val: 2 },
-      { op: '*', val: 3 }
-    ];
-
-    const badOps = [
-      { op: '-', val: 1 },
-      { op: '-', val: 2 },
-      { op: '-', val: 5 },
-      { op: '-', val: 10 },
-      { op: '/', val: 2 },
-      { op: '/', val: 3 }
-    ];
-
-    // Pick one good and one bad to force a choice
-    const goodChoice = goodOps[Math.floor(Math.random() * goodOps.length)];
-    const badChoice = badOps[Math.floor(Math.random() * badOps.length)];
-
-    // 50% chance to swap lanes
-    if (Math.random() > 0.5) {
-      return [goodChoice, badChoice];
-    } else {
-      return [badChoice, goodChoice];
-    }
-  }
-
   spawnBlocks() {
-    const ops = this.generateOpPair();
-    const blockWidth = 50;
+    const rangeWidth = this.player.maxX - this.player.minX;
+    const blockWidth = rangeWidth / 2;
     const blockHeight = 25;
     
-    // Left lane (25% of width), Right lane (75% of width)
-    const leftX = this.width * 0.25 - blockWidth / 2;
-    const rightX = this.width * 0.75 - blockWidth / 2;
+    // Left lane spans from minX to center, Right lane spans from center to maxX
+    const leftX = this.player.minX;
+    const rightX = this.width / 2;
 
     const blockSpeed = (this.height * 0.25) * this.speedMultiplier;
 
+    // Create unique row ID and shared trigger state
+    const rowId = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const rowState = { triggered: false };
+
+    // Get current finals score to determine award tier
+    const tempSemis = Math.floor(this.score / 400);
+    const finals = Math.floor(tempSemis / 400);
+    const tier = this.getAwardTier(finals);
+
+    // Generate operators based on tier probability
+    const op1 = this.generateSingleOp(tier);
+    const op2 = this.generateSingleOp(tier);
+
     this.blocks.push({
+      rowId: rowId,
+      rowState: rowState,
       x: leftX,
       y: -blockHeight,
       width: blockWidth,
       height: blockHeight,
-      op: ops[0].op,
-      val: ops[0].val,
-      text: `${ops[0].op}${ops[0].val}`,
+      op: op1.op,
+      val: op1.val,
+      text: `${op1.op === '*' ? '×' : op1.op === '/' ? '÷' : op1.op}${op1.val}`,
       speed: blockSpeed,
-      type: ops[0].op === '+' || ops[0].op === '*' ? 'good' : 'bad'
+      type: op1.op === '*' || op1.op === '+' ? 'good' : 'bad'
     });
 
     this.blocks.push({
+      rowId: rowId,
+      rowState: rowState,
       x: rightX,
       y: -blockHeight,
       width: blockWidth,
       height: blockHeight,
-      op: ops[1].op,
-      val: ops[1].val,
-      text: `${ops[1].op}${ops[1].val}`,
+      op: op2.op,
+      val: op2.val,
+      text: `${op2.op === '*' ? '×' : op2.op === '/' ? '÷' : op2.op}${op2.val}`,
       speed: blockSpeed,
-      type: ops[1].op === '+' || ops[1].op === '*' ? 'good' : 'bad'
+      type: op2.op === '*' || op2.op === '+' ? 'good' : 'bad'
     });
   }
 
@@ -247,58 +309,69 @@ class PhysicsContestGame {
       this.speedMultiplier = Math.min(2.0, this.speedMultiplier + 0.03);
     }
 
-    // 2. Player Physics Update
+    // 2. Player 1D Horizontal Physics Update
     if (this.controlMode === 'keyboard') {
-      // Accelerate left or right
       if (this.keys.Left) {
         this.player.vx -= this.player.accel * dt;
       } else if (this.keys.Right) {
         this.player.vx += this.player.accel * dt;
       } else {
-        // Apply friction when no key is pressed
         this.player.vx *= this.player.friction;
         if (Math.abs(this.player.vx) < 5) this.player.vx = 0;
       }
 
-      // Clamp speed
+      // Clamp X speed
       if (this.player.vx > this.player.maxSpeed) this.player.vx = this.player.maxSpeed;
       if (this.player.vx < -this.player.maxSpeed) this.player.vx = -this.player.maxSpeed;
 
       this.player.x += this.player.vx * dt;
 
       // Keep inside bounds
-      const halfW = this.player.width / 2;
-      if (this.player.x < halfW) {
-        this.player.x = halfW;
-        this.player.vx = 0;
-      }
-      if (this.player.x > this.width - halfW) {
-        this.player.x = this.width - halfW;
-        this.player.vx = 0;
-      }
+      this.player.x = Math.max(this.player.minX, Math.min(this.player.maxX, this.player.x));
+
       // Keep pointer target sync
       this.player.targetX = this.player.x;
     } else {
-      // Smooth pointer tracking interpolation
+      // Smooth pointer tracking (1D)
       const dx = this.player.targetX - this.player.x;
-      this.player.x += dx * 0.2; // Lerp factor
-      this.player.vx = 0; // reset keyboard speed
+      this.player.x += dx * 0.25;
+      this.player.vx = 0;
     }
 
-    // 3. Update Falling Blocks
+    // 3. Update Falling Blocks & Collision Detection
     for (let i = this.blocks.length - 1; i >= 0; i--) {
       const b = this.blocks[i];
       b.y += b.speed * dt;
 
-      // Collision detection with player block
-      if (this.checkCollision(this.player, b)) {
-        this.applyBlockEffect(b);
-        this.createParticles(b.x + b.width / 2, b.y + b.height / 2, b.type);
-        this.blocks.splice(i, 1);
-        continue;
+      // Trigger collision when the block center crosses the player's Y coordinate line
+      const blockCenterY = b.y + b.height / 2;
+      const playerYThreshold = this.player.y + this.player.height / 2;
+      if (blockCenterY >= playerYThreshold && !b.rowState.triggered) {
+        // Find both blocks of the same row
+        const rowBlocks = this.blocks.filter(x => x.rowId === b.rowId);
+        if (rowBlocks.length > 0) {
+          let hitBlock = null;
+          if (this.player.x < this.width / 2) {
+            // Player is on the left half, so they hit the left block
+            hitBlock = rowBlocks.find(x => x.x < this.width / 2);
+          } else {
+            // Player is on the right half, so they hit the right block
+            hitBlock = rowBlocks.find(x => x.x >= this.width / 2);
+          }
+
+          if (hitBlock) {
+            this.applyBlockEffect(hitBlock);
+            b.rowState.triggered = true; // Mark row as triggered
+            this.createParticles(hitBlock.x + hitBlock.width / 2, hitBlock.y + hitBlock.height / 2, hitBlock.type);
+          }
+        }
+
+        // Both blocks disappear immediately when one is triggered
+        this.blocks = this.blocks.filter(x => x.rowId !== b.rowId);
+        break; // break loop since array is filtered
       }
 
-      // Remove off-screen blocks
+      // Remove off-screen blocks (safety fallback)
       if (b.y > this.height) {
         this.blocks.splice(i, 1);
       }
@@ -316,23 +389,7 @@ class PhysicsContestGame {
     }
   }
 
-  checkCollision(player, block) {
-    // Player is centered horizontally, block is left-aligned
-    const pLeft = player.x - player.width / 2;
-    const pRight = player.x + player.width / 2;
-    const pTop = player.y;
-    const pBottom = player.y + player.height;
-
-    const bLeft = block.x;
-    const bRight = block.x + block.width;
-    const bTop = block.y;
-    const bBottom = block.y + block.height;
-
-    return pRight > bLeft && pLeft < bRight && pBottom > bTop && pTop < bBottom;
-  }
-
   applyBlockEffect(block) {
-    const originalScore = this.score;
     let newScore = this.score;
 
     switch (block.op) {
@@ -355,9 +412,6 @@ class PhysicsContestGame {
     newScore = Math.max(1, Math.round(newScore));
     this.score = newScore;
     this.updateScoreHUD();
-
-    // Log calculation details to telemetry
-    this.logSystemEvent(`COLLISION: [${block.text}] ${originalScore} -> ${this.score}`);
   }
 
   createParticles(x, y, type) {
@@ -380,24 +434,18 @@ class PhysicsContestGame {
   }
 
   updateScoreHUD() {
+    const prelims = this.score % 400;
+    const tempSemis = Math.floor(this.score / 400);
+    const semis = tempSemis % 400;
+    const finals = Math.floor(tempSemis / 400);
+
     if (this.scoreHud) {
-      this.scoreHud.textContent = this.score.toString();
-    }
-  }
-
-  logSystemEvent(msg) {
-    const timestamp = new Date().toLocaleTimeString().split(' ')[0];
-    this.logs.unshift(`[${timestamp}] ${msg}`);
-    
-    // Keep last 6 logs
-    if (this.logs.length > 6) {
-      this.logs.pop();
+      this.scoreHud.innerHTML = `决赛: ${finals} &nbsp;|&nbsp; 复赛: ${semis} &nbsp;|&nbsp; 预赛: ${prelims}`;
     }
 
-    if (this.telemetry) {
-      this.telemetry.innerHTML = this.logs
-        .map(line => `<div class="term-line">${line}</div>`)
-        .join('');
+    if (this.awardHud) {
+      const awardName = this.getAwardName(finals);
+      this.awardHud.textContent = `当前奖项: ${awardName}`;
     }
   }
 
@@ -405,27 +453,43 @@ class PhysicsContestGame {
     // Clear Canvas
     this.ctx.clearRect(0, 0, this.width, this.height);
 
-    // Retrieve active theme colors from DOM
+    // Retrieve active theme colors from DOM (safely wrapped)
     const bodyStyle = getComputedStyle(document.body);
-    const textPrimary = bodyStyle.getPropertyValue('--text-primary').trim() || '#ffffff';
-    const textSecondary = bodyStyle.getPropertyValue('--text-secondary').trim() || '#8e8e93';
-    const border = bodyStyle.getPropertyValue('--border').trim() || 'rgba(255, 255, 255, 0.08)';
+    const getStyleVal = (prop, fallback) => {
+      const val = bodyStyle.getPropertyValue(prop);
+      return val ? val.trim() : fallback;
+    };
+    const textPrimary = getStyleVal('--text-primary', '#ffffff');
+    const textSecondary = getStyleVal('--text-secondary', '#8e8e93');
+    const border = getStyleVal('--border', 'rgba(255, 255, 255, 0.08)');
 
     // Draw Lane Markings (Dashed vertical lines)
     this.ctx.strokeStyle = border;
     this.ctx.lineWidth = 1;
-    this.ctx.setLineDash([5, 15]);
+    this.ctx.setLineDash([4, 12]);
     
-    // Lane 0 line
+    // Left boundary
     this.ctx.beginPath();
-    this.ctx.moveTo(this.width * 0.25, 0);
-    this.ctx.lineTo(this.width * 0.25, this.height);
+    this.ctx.moveTo(this.player.minX, 0);
+    this.ctx.lineTo(this.player.minX, this.height);
     this.ctx.stroke();
 
-    // Lane 1 line
+    // Right boundary
     this.ctx.beginPath();
-    this.ctx.moveTo(this.width * 0.75, 0);
-    this.ctx.lineTo(this.width * 0.75, this.height);
+    this.ctx.moveTo(this.player.maxX, 0);
+    this.ctx.lineTo(this.player.maxX, this.height);
+    this.ctx.stroke();
+    
+    // Middle dividing line (between left and right lanes)
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.width / 2, 0);
+    this.ctx.lineTo(this.width / 2, this.height);
+    this.ctx.stroke();
+
+    // Collision target horizontal line at player.y
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.player.minX, this.player.y + this.player.height / 2);
+    this.ctx.lineTo(this.player.maxX, this.player.y + this.player.height / 2);
     this.ctx.stroke();
     
     this.ctx.setLineDash([]);
@@ -458,11 +522,11 @@ class PhysicsContestGame {
       this.ctx.strokeStyle = textPrimary;
       this.ctx.lineWidth = 1.5;
 
-      // Draw rounded/sharp rect
+      // Draw rect
       this.ctx.fillRect(b.x, b.y, b.width, b.height);
       
       // Black background center to show text clearly
-      this.ctx.fillStyle = getComputedStyle(document.documentElement).getAttribute('data-theme') === 'light' ? '#ffffff' : '#121212';
+      this.ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'light' ? '#ffffff' : '#121212';
       this.ctx.fillRect(b.x + 2, b.y + 2, b.width - 4, b.height - 4);
 
       // Draw operator text

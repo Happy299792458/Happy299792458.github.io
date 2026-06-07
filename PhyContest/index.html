@@ -63,6 +63,29 @@
     [data-theme="light"] .hud-bar {
       background-color: rgba(255, 255, 255, 0.85);
     }
+
+    .award-bar {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-sans);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      background-color: rgba(10, 10, 10, 0.85);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      border-radius: 4px;
+      z-index: 10;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(4px);
+      box-shadow: var(--shadow);
+    }
+
+    [data-theme="light"] .award-bar {
+      background-color: rgba(255, 255, 255, 0.85);
+    }
     
     #gameCanvas {
       background-color: var(--bg-secondary);
@@ -78,8 +101,8 @@
 <body>
 
   <div class="game-container">
-    <!-- Top-Right Score HUD -->
-    <div class="hud-bar">SCORE: <span id="lblScore">10</span></div>
+    <div class="award-bar" id="lblAward">当前奖项: 铁牌</div>
+    <div class="hud-bar" id="lblScore">决赛: 0 &nbsp;|&nbsp; 复赛: 0 &nbsp;|&nbsp; 预赛: 10</div>
     
     <!-- Game View Canvas -->
     <canvas id="gameCanvas" tabindex="0"></canvas>
@@ -95,10 +118,9 @@
     const savedTheme = localStorage.getItem('theme') || 'dark';
     htmlEl.setAttribute('data-theme', savedTheme);
 
-    // Auto start game on content loaded
-    window.addEventListener('DOMContentLoaded', () => {
-      // Instantiate game engine (telemetry console is null as it's removed)
-      game = new PhysicsContestGame('gameCanvas', 'lblScore', null);
+    const initGame = () => {
+      // Instantiate game engine with score and award HUD elements
+      game = new PhysicsContestGame('gameCanvas', 'lblScore', 'lblAward');
       
       // Handle canvas resize
       window.addEventListener('resize', () => {
@@ -108,7 +130,14 @@
       // Auto start and grab input focus
       game.start();
       document.getElementById('gameCanvas').focus();
-    });
+    };
+
+    // Safe execution checking if DOM has already loaded (handles caches/delays)
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initGame);
+    } else {
+      initGame();
+    }
   </script>
 </body>
 </html>
