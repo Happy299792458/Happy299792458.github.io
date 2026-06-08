@@ -7,20 +7,23 @@ class ShultGridEngine {
     this.isFinished = false;
     this.isPlaying = false;
     this.mode = 'normal';
+    this.size = 5;
   }
 
-  init(mode = 'normal') {
+  init(mode = 'normal', size = 5) {
     this.mode = mode;
+    this.size = parseInt(size);
+    const totalCells = this.size * this.size;
     this.currentNumber = 1;
     this.isFinished = false;
     this.isPlaying = false;
     
-    this.cells = Array.from({length: 25}, (_, i) => ({
+    this.cells = Array.from({length: totalCells}, (_, i) => ({
       id: i,
       num: i + 1,
       displayNum: i + 1,
-      r: Math.floor(i / 5),
-      c: i % 5,
+      r: Math.floor(i / this.size),
+      c: i % this.size,
       zIndex: 1
     }));
 
@@ -36,8 +39,8 @@ class ShultGridEngine {
 
   shufflePositions() {
     let coords = [];
-    for(let i=0; i<5; i++) {
-      for(let j=0; j<5; j++) {
+    for(let i=0; i<this.size; i++) {
+      for(let j=0; j<this.size; j++) {
         coords.push({r: i, c: j});
       }
     }
@@ -52,25 +55,36 @@ class ShultGridEngine {
   }
 
   setupSpiral() {
-    const path = [
-      [0,0], [0,1], [0,2], [0,3], [0,4],
-      [1,4], [2,4], [3,4], [4,4],
-      [4,3], [4,2], [4,1], [4,0],
-      [3,0], [2,0], [1,0],
-      [1,1], [1,2], [1,3],
-      [2,3], [3,3],
-      [3,2], [3,1],
-      [2,1],
-      [2,2]
-    ];
+    const path = [];
+    let top = 0, bottom = this.size - 1;
+    let left = 0, right = this.size - 1;
+
+    while (top <= bottom && left <= right) {
+      for (let c = left; c <= right; c++) path.push([top, c]);
+      top++;
+      
+      for (let r = top; r <= bottom; r++) path.push([r, right]);
+      right--;
+      
+      if (top <= bottom) {
+        for (let c = right; c >= left; c--) path.push([bottom, c]);
+        bottom--;
+      }
+      
+      if (left <= right) {
+        for (let r = bottom; r >= top; r--) path.push([r, left]);
+        left++;
+      }
+    }
+
     let flipX = Math.random() > 0.5;
     let flipY = Math.random() > 0.5;
     let swapXY = Math.random() > 0.5;
 
     let finalPath = path.map(([r, c]) => {
       let nr = r, nc = c;
-      if (flipX) nr = 4 - nr;
-      if (flipY) nc = 4 - nc;
+      if (flipX) nr = (this.size - 1) - nr;
+      if (flipY) nc = (this.size - 1) - nc;
       if (swapXY) [nr, nc] = [nc, nr];
       return {r: nr, c: nc};
     });
@@ -98,10 +112,11 @@ class ShultGridEngine {
     if (isCorrect) {
       const clickedR = cell.r;
       const clickedC = cell.c;
+      const totalCells = this.size * this.size;
 
       this.currentNumber++;
       
-      if (this.currentNumber > 25) {
+      if (this.currentNumber > totalCells) {
         this.finish();
         return { status: 'finish' };
       }

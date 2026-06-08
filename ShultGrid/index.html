@@ -79,12 +79,9 @@
     
     .grid-cell {
       position: absolute;
-      width: 20%;
-      height: 20%;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 6vmin;
       font-weight: 600;
       border-bottom: 1px solid var(--border);
       border-right: 1px solid var(--border);
@@ -107,7 +104,6 @@
     
     .grid-cell.wrong {
       animation: shake 0.25s ease;
-      /* removed border-color and color overrides */
     }
     
     @keyframes shake {
@@ -127,7 +123,6 @@
       pointer-events: none; /* Disable interaction on preview */
     }
     #gridPreview .grid-cell {
-      font-size: 1.25rem !important;
       border-radius: 4px !important; /* Scale down border-radius for borderless style preview */
     }
     
@@ -190,8 +185,8 @@
       border-radius: 8px !important;
       background-color: var(--bg-primary) !important;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      width: calc(20% - 8px) !important;
-      height: calc(20% - 8px) !important;
+      width: calc(var(--cell-percent) - 8px) !important;
+      height: calc(var(--cell-percent) - 8px) !important;
       margin: 4px;
     }
     [data-theme="dark"] .style-borderless .grid-cell {
@@ -294,25 +289,36 @@
       <!-- STEP 1: WELCOME SCREEN -->
       <div id="viewWelcome" class="view-step active">
         <div class="intro-header">
-          <h1>舒尔特方格测试 (Schulte Grid)</h1>
-          <p>经典专注力训练工具。请以最快的速度按1到25的顺序点击网格中的数字。此测试可有效衡量您的视觉搜索速度与注意力集中能力。</p>
+          <h1>舒尔特方格测试</h1>
+          <p>经典专注力训练工具。请以最快的速度按从小到大的顺序点击网格中的数字。此测试可有效衡量您的视觉搜索速度与注意力集中能力。</p>
         </div>
         
         <!-- Style Preview -->
         <div id="gridPreview" class="grid-container style-classic"></div>
         
         <div class="style-selector">
-          <label for="gridStyleSelect" style="color: var(--text-secondary); font-size: 0.95rem;">预设方格风格：</label>
+          <label for="gridSizeSelect" style="color: var(--text-secondary); font-size: 0.95rem;">方格尺寸：</label>
+          <select id="gridSizeSelect" class="custom-select">
+            <option value="3">3 x 3</option>
+            <option value="4">4 x 4</option>
+            <option value="5" selected>5 x 5</option>
+            <option value="6">6 x 6</option>
+            <option value="7">7 x 7</option>
+          </select>
+        </div>
+
+        <div class="style-selector">
+          <label for="gridStyleSelect" style="color: var(--text-secondary); font-size: 0.95rem;">视觉风格：</label>
           <select id="gridStyleSelect" class="custom-select">
-            <option value="style-classic">经典极简 (Classic)</option>
-            <option value="style-green">专注护眼 (Focus Green)</option>
-            <option value="style-contrast">高对比度 (High Contrast)</option>
-            <option value="style-borderless">无边框浮空 (Borderless)</option>
+            <option value="style-classic">经典极简</option>
+            <option value="style-green">专注护眼</option>
+            <option value="style-contrast">高对比度</option>
+            <option value="style-borderless">无边框浮空</option>
           </select>
         </div>
         
         <div class="style-selector" style="margin-bottom: 3.5rem;">
-          <label for="gridDifficultySelect" style="color: var(--text-secondary); font-size: 0.95rem;">自定难度设定：</label>
+          <label for="gridDifficultySelect" style="color: var(--text-secondary); font-size: 0.95rem;">难度设定：</label>
           <select id="gridDifficultySelect" class="custom-select">
             <option value="normal">1. 正常</option>
             <option value="extreme">2. 极难</option>
@@ -328,7 +334,7 @@
       <!-- STEP 2: ACTIVE TESTING SCREEN -->
       <div id="viewTesting" class="view-step">
         <div class="test-stats-row">
-          <div>目标: <span id="lblTarget" class="history-val-highlight">1</span> / 25</div>
+          <div>目标: <span id="lblTarget" class="history-val-highlight">1</span> / <span id="lblTargetTotal">25</span></div>
           <div>用时: <span id="lblTimer" class="history-val-highlight">0.00</span> 秒</div>
         </div>
         
@@ -410,19 +416,31 @@
 
     // Setup Preview Grid
     const styleSelect = document.getElementById('gridStyleSelect');
+    const sizeSelect = document.getElementById('gridSizeSelect');
     const previewContainer = document.getElementById('gridPreview');
-    let previewHTML = '';
-    for(let i=0; i<25; i++) {
-      let r = Math.floor(i / 5);
-      let c = i % 5;
-      previewHTML += `<div class="grid-cell" style="left: ${c*20}%; top: ${r*20}%;">${i+1}</div>`;
-    }
-    previewContainer.innerHTML = previewHTML;
-
-    styleSelect.addEventListener('change', (e) => {
-      const selectedClass = e.target.value;
+    
+    function updatePreview() {
+      const size = parseInt(sizeSelect.value) || 5;
+      const selectedClass = styleSelect.value;
       previewContainer.className = 'grid-container ' + selectedClass;
-    });
+      
+      // Update custom property for borderless calc() width/height
+      const percent = 100 / size;
+      previewContainer.style.setProperty('--cell-percent', percent + '%');
+      
+      let previewHTML = '';
+      for(let i=0; i < size * size; i++) {
+        let r = Math.floor(i / size);
+        let c = i % size;
+        let fontSize = (60 / size) + 'px';
+        previewHTML += `<div class="grid-cell" style="width: ${percent}%; height: ${percent}%; left: ${c*percent}%; top: ${r*percent}%; font-size: ${fontSize};">${i+1}</div>`;
+      }
+      previewContainer.innerHTML = previewHTML;
+    }
+
+    styleSelect.addEventListener('change', updatePreview);
+    sizeSelect.addEventListener('change', updatePreview);
+    updatePreview();
 
     // Timer UI Update
     function updateTimerUI() {
@@ -434,14 +452,14 @@
 
     // Start Game
     function startTest() {
-      const diffSelect = document.getElementById('gridDifficultySelect');
-      const difficulty = diffSelect ? diffSelect.value : 'normal';
+      const difficulty = document.getElementById('gridDifficultySelect').value || 'normal';
+      const size = parseInt(document.getElementById('gridSizeSelect').value) || 5;
 
-      engine.init(difficulty);
+      engine.init(difficulty, size);
       createGridDOM();
       
       document.getElementById('lblTarget').textContent = engine.currentNumber;
-      document.getElementById('lblTimer').textContent = "0.00";
+      document.getElementById('lblTargetTotal').textContent = size * size;
       
       showView('viewTesting');
       
@@ -457,9 +475,17 @@
       const selectedStyle = document.getElementById('gridStyleSelect').value;
       container.className = 'grid-container ' + selectedStyle;
       
+      const size = engine.size;
+      const percent = 100 / size;
+      container.style.setProperty('--cell-percent', percent + '%');
+      
       engine.cells.forEach(cellState => {
         const el = document.createElement('div');
         el.className = 'grid-cell';
+        el.style.width = percent + '%';
+        el.style.height = percent + '%';
+        el.style.fontSize = (30 / size) + 'vmin'; // Dynamic font size based on grid dimension
+        
         el.onclick = () => onCellClick(cellState.id, el);
         container.appendChild(el);
         cellState.el = el;
@@ -469,10 +495,11 @@
     }
 
     function updateGridDOM() {
+      const percent = 100 / engine.size;
       engine.cells.forEach(c => {
         c.el.textContent = c.displayNum;
-        c.el.style.left = (c.c * 20) + '%';
-        c.el.style.top = (c.r * 20) + '%';
+        c.el.style.left = (c.c * percent) + '%';
+        c.el.style.top = (c.r * percent) + '%';
         c.el.style.zIndex = c.zIndex;
       });
     }
