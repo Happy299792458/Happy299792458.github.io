@@ -683,3 +683,34 @@ body {
     gap: 1.5rem;
   }
 }
+
+/* --- Buttons --- */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 1.1rem;
+  padding: 1.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition-smooth);
+  border: 1px solid var(--text-primary);
+  background-color: transparent;
+  color: var(--text-primary);
+  outline: none;
+  display: inline-block;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.btn:hover {
+  background-color: var(--text-primary);
+  color: var(--accent-inverse);
+}
+.btn-primary {
+  background-color: var(--text-primary);
+  color: var(--accent-inverse);
+}
+.btn-primary:hover {
+  background-color: transparent;
+  color: var(--text-primary);
+}

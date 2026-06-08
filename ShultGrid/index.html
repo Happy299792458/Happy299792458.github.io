@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>舒尔特方格测试 - 2026测试系统</title>
+  <meta name="description" content="经典舒尔特方格测试，精确评估您的视觉搜索能力与注意力集中水平。">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Shared Stylesheet -->
+  <link rel="stylesheet" href="../index.css">
+  
+  <!-- Module Specific Styles -->
+  <style>
+    .module-wrapper {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+    }
+    
+    .panel {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3rem 2.5rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition-smooth);
+    }
+    
+    /* Step 1: Welcome */
+    .intro-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .intro-header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    .intro-header p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    /* Step 2: Testing Interface */
+    .test-stats-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px dashed var(--border);
+    }
+    .history-val-highlight {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    .grid-container {
+      position: relative;
+      width: 66vmin;
+      height: 66vmin;
+      max-width: 100%;
+      margin: 0 auto 3rem auto;
+      border-top: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+    }
+    
+    .grid-cell {
+      position: absolute;
+      width: 20%;
+      height: 20%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 6vmin;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background-color: var(--bg-primary);
+      border-radius: 0;
+      cursor: pointer;
+      user-select: none;
+      transition: left 0.12s ease-out, top 0.12s ease-out, background-color 0.1s ease, border-color 0.1s ease;
+      color: var(--text-primary);
+      box-sizing: border-box;
+    }
+    
+    .grid-cell:active {
+      transform: scale(0.95);
+    }
+    
+    .grid-cell:hover {
+      border-color: var(--border-hover);
+    }
+    
+    .grid-cell.wrong {
+      animation: shake 0.25s ease;
+      /* removed border-color and color overrides */
+    }
+    
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+    
+    /* Preview Grid */
+    #gridPreview {
+      width: 220px !important;
+      height: 220px !important;
+      margin-top: 1.5rem !important;
+      margin-bottom: 1.5rem !important;
+      pointer-events: none; /* Disable interaction on preview */
+    }
+    #gridPreview .grid-cell {
+      font-size: 1.25rem !important;
+      border-radius: 4px !important; /* Scale down border-radius for borderless style preview */
+    }
+    
+    /* Preset Styles */
+    .style-selector {
+      margin: 1.5rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .custom-select {
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition-fast);
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="gray" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position-x: calc(100% - 10px);
+      background-position-y: center;
+      padding-right: 2.5rem;
+    }
+    .custom-select:hover {
+      border-color: var(--border-hover);
+    }
+    
+    .style-green {
+      border-color: #4caf50 !important;
+    }
+    .style-green .grid-cell {
+      border-color: #4caf50 !important;
+      background-color: rgba(76, 175, 80, 0.08) !important;
+      color: #4caf50 !important;
+    }
+
+    .style-contrast {
+      border-top: 3px solid var(--text-primary) !important;
+      border-left: 3px solid var(--text-primary) !important;
+    }
+    .style-contrast .grid-cell {
+      border-bottom: 3px solid var(--text-primary) !important;
+      border-right: 3px solid var(--text-primary) !important;
+      font-weight: 800 !important;
+      font-family: var(--font-mono) !important;
+    }
+
+    .style-borderless {
+      border: none !important;
+    }
+    .style-borderless .grid-cell {
+      border: none !important;
+      border-radius: 8px !important;
+      background-color: var(--bg-primary) !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: calc(20% - 8px) !important;
+      height: calc(20% - 8px) !important;
+      margin: 4px;
+    }
+    [data-theme="dark"] .style-borderless .grid-cell {
+      background-color: var(--bg-tertiary) !important;
+      box-shadow: none;
+    }
+
+    /* Step 3: Result dashboard */
+    .result-score-container {
+      text-align: center;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2.5rem;
+    }
+    .result-score-label {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .result-score-val {
+      font-size: 5.5rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      text-shadow: var(--glow);
+    }
+    .result-score-val span {
+      font-size: 2rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-left: 0.2rem;
+    }
+    .result-class-badge {
+      display: inline-block;
+      border: 1px solid var(--text-primary);
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .result-class-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+    
+    /* Views State Management */
+    .view-step {
+      display: none;
+    }
+    .view-step.active {
+      display: block;
+    }
+    
+    /* Responsive styling */
+    @media (max-width: 600px) {
+      .module-wrapper {
+        margin: 2rem auto;
+      }
+      .panel {
+        padding: 2rem 1.5rem;
+      }
+      .result-score-val {
+        font-size: 4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <span class="status-dot"></span>
+        <span>2026测试系统</span>
+      </a>
+      <div class="header-controls">
+        <span class="system-status">模块：舒尔特方格</span>
+        <button class="theme-toggle" id="themeToggleBtn" aria-label="切换主题" title="切换黑白主题">
+          <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="module-wrapper">
+    <div class="panel">
+      
+      <!-- STEP 1: WELCOME SCREEN -->
+      <div id="viewWelcome" class="view-step active">
+        <div class="intro-header">
+          <h1>舒尔特方格测试 (Schulte Grid)</h1>
+          <p>经典专注力训练工具。请以最快的速度按1到25的顺序点击网格中的数字。此测试可有效衡量您的视觉搜索速度与注意力集中能力。</p>
+        </div>
+        
+        <!-- Style Preview -->
+        <div id="gridPreview" class="grid-container style-classic"></div>
+        
+        <div class="style-selector">
+          <label for="gridStyleSelect" style="color: var(--text-secondary); font-size: 0.95rem;">预设方格风格：</label>
+          <select id="gridStyleSelect" class="custom-select">
+            <option value="style-classic">经典极简 (Classic)</option>
+            <option value="style-green">专注护眼 (Focus Green)</option>
+            <option value="style-contrast">高对比度 (High Contrast)</option>
+            <option value="style-borderless">无边框浮空 (Borderless)</option>
+          </select>
+        </div>
+        
+        <div class="style-selector" style="margin-bottom: 3.5rem;">
+          <label for="gridDifficultySelect" style="color: var(--text-secondary); font-size: 0.95rem;">自定难度设定：</label>
+          <select id="gridDifficultySelect" class="custom-select">
+            <option value="normal">1. 正常</option>
+            <option value="extreme">2. 极难</option>
+            <option value="hard">3. 困难</option>
+            <option value="easy">4. 简单</option>
+            <option value="minimalist">5. 极简</option>
+          </select>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="startTest()">开始测试</button>
+      </div>
+
+      <!-- STEP 2: ACTIVE TESTING SCREEN -->
+      <div id="viewTesting" class="view-step">
+        <div class="test-stats-row">
+          <div>目标: <span id="lblTarget" class="history-val-highlight">1</span> / 25</div>
+          <div>用时: <span id="lblTimer" class="history-val-highlight">0.00</span> 秒</div>
+        </div>
+        
+        <div class="grid-container" id="gridContainer">
+          <!-- Grid cells will be injected here by JS -->
+        </div>
+      </div>
+
+      <!-- STEP 3: RESULTS SCREEN -->
+      <div id="viewResults" class="view-step">
+        <div class="result-score-container">
+          <div class="result-score-label">您的完成时间</div>
+          <div class="result-score-val" id="resTime">0.00<span>s</span></div>
+          <div class="result-class-badge" id="resBadge">评分</div>
+          <div class="result-class-desc" id="resDesc">描述文本</div>
+        </div>
+        
+        <div style="margin-top: 3rem; display: flex; gap: 1rem;">
+          <button class="btn btn-primary" style="flex: 1;" onclick="showView('viewWelcome')">再次挑战</button>
+          <a href="../index.html" class="btn" style="flex: 1; text-decoration: none;">返回主控台</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <div>&copy; 2026 NEO-TEST CORE. ALL RIGHTS RESERVED.</div>
+      </div>
+      <div class="footer-right">
+        <a href="../index.html" class="footer-link">主控台</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Load Engine and Local Script -->
+  <script src="engine.js"></script>
+  <script>
+    const engine = new ShultGridEngine();
+
+    // Theme logic
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    const darkIconPath = "M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z";
+    const lightIconPath = "M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zm14.142 14.142l1.414-1.414 2.122 2.122-1.414 1.414-2.122-2.122zM1 11h3v2H1v-2zm19 0h3v2h-3v-2zM3.515 19.071l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414zm14.142-14.142l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414z";
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    htmlEl.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    themeBtn.addEventListener('click', () => {
+      const currentTheme = htmlEl.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    });
+
+    function updateThemeIcon(theme) {
+      if (theme === 'dark') {
+        themeIcon.setAttribute('viewBox', '0 0 24 24');
+        themeIcon.innerHTML = `<path d="${darkIconPath}"/>`;
+      } else {
+        themeIcon.setAttribute('viewBox', '0 0 24 24');
+        themeIcon.innerHTML = `<path d="${lightIconPath}"/>`;
+      }
+    }
+
+    // View Routing
+    function showView(viewId) {
+      document.querySelectorAll('.view-step').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    // Setup Preview Grid
+    const styleSelect = document.getElementById('gridStyleSelect');
+    const previewContainer = document.getElementById('gridPreview');
+    let previewHTML = '';
+    for(let i=0; i<25; i++) {
+      let r = Math.floor(i / 5);
+      let c = i % 5;
+      previewHTML += `<div class="grid-cell" style="left: ${c*20}%; top: ${r*20}%;">${i+1}</div>`;
+    }
+    previewContainer.innerHTML = previewHTML;
+
+    styleSelect.addEventListener('change', (e) => {
+      const selectedClass = e.target.value;
+      previewContainer.className = 'grid-container ' + selectedClass;
+    });
+
+    // Timer UI Update
+    function updateTimerUI() {
+      if (!engine.isFinished) {
+        document.getElementById('lblTimer').textContent = engine.getTimeElapsed();
+        requestAnimationFrame(updateTimerUI);
+      }
+    }
+
+    // Start Game
+    function startTest() {
+      const diffSelect = document.getElementById('gridDifficultySelect');
+      const difficulty = diffSelect ? diffSelect.value : 'normal';
+
+      engine.init(difficulty);
+      createGridDOM();
+      
+      document.getElementById('lblTarget').textContent = engine.currentNumber;
+      document.getElementById('lblTimer').textContent = "0.00";
+      
+      showView('viewTesting');
+      
+      // Start immediately
+      engine.start();
+      requestAnimationFrame(updateTimerUI);
+    }
+
+    function createGridDOM() {
+      const container = document.getElementById('gridContainer');
+      container.innerHTML = '';
+      
+      const selectedStyle = document.getElementById('gridStyleSelect').value;
+      container.className = 'grid-container ' + selectedStyle;
+      
+      engine.cells.forEach(cellState => {
+        const el = document.createElement('div');
+        el.className = 'grid-cell';
+        el.onclick = () => onCellClick(cellState.id, el);
+        container.appendChild(el);
+        cellState.el = el;
+      });
+
+      updateGridDOM();
+    }
+
+    function updateGridDOM() {
+      engine.cells.forEach(c => {
+        c.el.textContent = c.displayNum;
+        c.el.style.left = (c.c * 20) + '%';
+        c.el.style.top = (c.r * 20) + '%';
+        c.el.style.zIndex = c.zIndex;
+      });
+    }
+
+    // Handle Cell Click
+    function onCellClick(id, el) {
+      const result = engine.clickCell(id);
+      
+      if (result.status === 'correct') {
+        updateGridDOM();
+        document.getElementById('lblTarget').textContent = engine.currentNumber;
+      } else if (result.status === 'finish') {
+        updateGridDOM();
+        showResults();
+      } else if (result.status === 'wrong') {
+        el.classList.remove('wrong');
+        void el.offsetWidth; // trigger reflow
+        el.classList.add('wrong');
+      }
+    }
+
+    function showResults() {
+      showView('viewResults');
+      
+      const finalTime = engine.getTimeElapsed();
+      document.getElementById('resTime').innerHTML = `${finalTime}<span>s</span>`;
+      
+      const rating = engine.getRating(finalTime);
+      document.getElementById('resBadge').textContent = rating.label;
+      document.getElementById('resDesc').textContent = rating.desc;
+    }
+  </script>
+</body>
+</html>
