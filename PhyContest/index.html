@@ -104,11 +104,96 @@
       height: 100%;
       outline: none;
     }
+
+    /* New Overlays */
+    .overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-primary);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+    }
+    .overlay h1 { font-size: 2.5rem; margin-bottom: 2rem; }
+    .overlay h2 { font-size: 2rem; margin-bottom: 1.5rem; }
+    .overlay button {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .overlay button:hover { background: rgba(255,255,255,0.1); }
+    
+    #storyOverlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 200;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+      color: #fff;
+      font-family: var(--font-sans);
+    }
+    #storyText {
+      position: absolute;
+      bottom: -100%;
+      width: 80%;
+      max-width: 800px;
+      font-size: 1.2rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      transition: bottom 25s linear;
+    }
+
+    .hud-btn {
+      background: rgba(10, 10, 10, 0.85);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+    }
+    [data-theme="light"] .hud-btn { background: rgba(255, 255, 255, 0.85); }
+    .hud-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .bottom-right-hud {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+    }
+    .top-left-hud {
+      position: absolute;
+      top: 20px;
+      left: 30px;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
 
   <div class="game-container">
+    <div class="top-left-hud">
+      <button class="hud-btn" id="btnExport">导出存档</button>
+      <button class="hud-btn" id="btnAllScores" style="display:none;">全部分数</button>
+    </div>
+
     <div class="award-bar" id="lblAward">当前奖项: 铁牌</div>
     <div class="hud-bar" id="lblScore">
       <span>预赛: 10</span>
@@ -116,8 +201,40 @@
       <span>决赛: 0</span>
     </div>
     
+    <div class="bottom-right-hud" id="antarcticaHud" style="display:none;">
+      <button class="hud-btn" id="btnTalent">天赋</button>
+    </div>
+
     <!-- Game View Canvas -->
     <canvas id="gameCanvas" tabindex="0"></canvas>
+  </div>
+
+  <!-- Overlays -->
+  <div id="welcomeScreen" class="overlay">
+    <h1>高中物理竞赛测试</h1>
+    <button id="btnNewGame">重新开始</button>
+    <button id="btnContinue" style="display:none;">继续测试</button>
+    <button id="btnImport">导入存档</button>
+    <input type="file" id="fileImport" style="display:none;" accept=".txt">
+  </div>
+
+  <div id="talentScreen" class="overlay" style="display:none;">
+    <h2>天赋树</h2>
+    <p>可用天赋点: <span id="lblTalentPoints">0</span></p>
+    <button id="btnNourish">滋养 (消耗1点)</button>
+    <button id="btnCloseTalent">关闭</button>
+  </div>
+
+  <div id="storyOverlay" style="display:none;">
+    <div id="storyText">经过不懈的努力，你在决赛中拿到了无法想象的高分，成为了当代物竞的最强者之一。可真的是这样吗？为什么你还没有进入国家集训队，保送清北？
+
+在教育部的步步紧逼之下，竞赛优惠政策越发收紧。目前的政策是：决赛第一名为金牌，第二名为银牌，第三名为铜牌，金银牌获破格强基资格，享受降一分的巨额优惠。
+
+无比的失望与不甘，难道三年以来的汗水与血泪就要如此付之东流了吗？
+
+据说国家集训队事实上从未取消，只是变得越来越神秘，即使是最顶尖的同学也难以窥见其门路。你想知道那是不是真的。
+
+好在由于你决赛的优异成绩，你入选了南极洲物理竞赛中国国家队，获得了与企鹅和海豹同台竞技的机会。如果能在南极洲的赛场上斩获金牌，对你未来出国将是巨大的帮助。</div>
   </div>
 
   <!-- Load Game Engine -->
@@ -131,20 +248,106 @@
     htmlEl.setAttribute('data-theme', savedTheme);
 
     const initGame = () => {
-      // Instantiate game engine with score and award HUD elements
       game = new PhysicsContestGame('gameCanvas', 'lblScore', 'lblAward');
       
-      // Handle canvas resize
       window.addEventListener('resize', () => {
         if (game) game.resize();
       });
 
-      // Auto start and grab input focus
-      game.start();
-      document.getElementById('gameCanvas').focus();
+      // UI Bindings
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      const btnNewGame = document.getElementById('btnNewGame');
+      const btnContinue = document.getElementById('btnContinue');
+      const btnImport = document.getElementById('btnImport');
+      const fileImport = document.getElementById('fileImport');
+      const btnExport = document.getElementById('btnExport');
+      const btnAllScores = document.getElementById('btnAllScores');
+      const btnTalent = document.getElementById('btnTalent');
+      const talentScreen = document.getElementById('talentScreen');
+      const btnCloseTalent = document.getElementById('btnCloseTalent');
+      const btnNourish = document.getElementById('btnNourish');
+      const lblTalentPoints = document.getElementById('lblTalentPoints');
+
+      if (game.hasSave()) {
+        btnContinue.style.display = 'block';
+      }
+
+      btnNewGame.onclick = () => {
+        game.clearSave();
+        welcomeScreen.style.display = 'none';
+        game.start();
+        document.getElementById('gameCanvas').focus();
+      };
+
+      btnContinue.onclick = () => {
+        game.loadSave();
+        welcomeScreen.style.display = 'none';
+        game.start();
+        document.getElementById('gameCanvas').focus();
+      };
+
+      btnImport.onclick = () => fileImport.click();
+      
+      fileImport.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (game.importSave(ev.target.result)) {
+            welcomeScreen.style.display = 'none';
+            game.start();
+            document.getElementById('gameCanvas').focus();
+          } else {
+            alert('存档导入失败: 无效的文件格式');
+          }
+          fileImport.value = ''; // clear
+        };
+        reader.readAsText(file);
+      };
+
+      btnExport.onclick = () => {
+        const b64 = game.exportSave();
+        const blob = new Blob([b64], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'phycontest_save.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById('gameCanvas').focus();
+      };
+
+      btnAllScores.onclick = () => {
+        game.showAllScores = !game.showAllScores;
+        game.updateScoreHUD();
+        document.getElementById('gameCanvas').focus();
+      };
+
+      btnTalent.onclick = () => {
+        game.isRunning = false;
+        talentScreen.style.display = 'flex';
+        lblTalentPoints.textContent = game.talentPoints;
+        btnNourish.textContent = game.talents.nourish ? "滋养 (已解锁)" : "滋养 (消耗1点)";
+      };
+
+      btnCloseTalent.onclick = () => {
+        talentScreen.style.display = 'none';
+        game.isRunning = true;
+        game.lastTime = performance.now();
+        document.getElementById('gameCanvas').focus();
+      };
+
+      btnNourish.onclick = () => {
+        if (!game.talents.nourish && game.talentPoints >= 1) {
+          game.talentPoints -= 1;
+          game.talents.nourish = true;
+          lblTalentPoints.textContent = game.talentPoints;
+          btnNourish.textContent = "滋养 (已解锁)";
+          game.saveGame();
+        }
+      };
     };
 
-    // Safe execution checking if DOM has already loaded (handles caches/delays)
     if (document.readyState === 'loading') {
       window.addEventListener('DOMContentLoaded', initGame);
     } else {

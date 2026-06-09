@@ -40,6 +40,7 @@ class PhysicsContestGame {
 
     this.blocks = [];
     this.particles = [];
+    this.snowflakes = [];
     this.awardsConfig = null;
 
     // Timing
@@ -51,6 +52,22 @@ class PhysicsContestGame {
     this.controlMode = 'keyboard';
     this.keys = { Left: false, Right: false };
 
+    // Antarctica & Talents
+    this.antarcticaPhase = false;
+    this.talentPoints = 0;
+    this.talents = { nourish: false };
+    this.addBonus = 0;
+    this.nextRowMult = 1;
+    this.showAllScores = false;
+    this.storyTriggered = false;
+
+    // Auto save
+    setInterval(() => {
+      if (this.isRunning && !this.storyTriggered) {
+        this.saveGame();
+      }
+    }, 5000);
+
     // Load awards config from JSON
     this.loadAwardsConfig();
 
@@ -59,6 +76,116 @@ class PhysicsContestGame {
 
     // Event listeners
     this.setupControls();
+  }
+
+  hasSave() {
+    return !!localStorage.getItem('phycontest_save');
+  }
+
+  clearSave() {
+    localStorage.removeItem('phycontest_save');
+    this.score = 10;
+    this.antarcticaPhase = false;
+    this.talentPoints = 0;
+    this.talents = { nourish: false };
+    this.addBonus = 0;
+    this.nextRowMult = 1;
+    this.storyTriggered = false;
+    this.snowflakes = [];
+    this.updateScoreHUD();
+    this.checkAntarcticaUI();
+  }
+
+  saveGame() {
+    const data = {
+      version: 1,
+      score: this.score,
+      antarcticaPhase: this.antarcticaPhase,
+      talentPoints: this.talentPoints,
+      talents: this.talents,
+      addBonus: this.addBonus,
+      nextRowMult: this.nextRowMult,
+      storyTriggered: this.storyTriggered
+    };
+    localStorage.setItem('phycontest_save', JSON.stringify(data));
+  }
+
+  loadSave() {
+    const data = JSON.parse(localStorage.getItem('phycontest_save'));
+    if (data) {
+      this.score = data.score;
+      this.antarcticaPhase = data.antarcticaPhase || false;
+      this.talentPoints = data.talentPoints || 0;
+      this.talents = data.talents || { nourish: false };
+      this.addBonus = data.addBonus || 0;
+      this.nextRowMult = data.nextRowMult || 1;
+      this.storyTriggered = data.storyTriggered || false;
+      this.updateScoreHUD();
+      this.checkAntarcticaUI();
+    }
+  }
+
+  exportSave() {
+    this.saveGame();
+    return btoa(unescape(encodeURIComponent(localStorage.getItem('phycontest_save'))));
+  }
+
+  importSave(b64) {
+    try {
+      const json = decodeURIComponent(escape(atob(b64)));
+      JSON.parse(json); // validate JSON
+      localStorage.setItem('phycontest_save', json);
+      this.loadSave();
+      return true;
+    } catch(e) {
+      console.error(e);
+      return false;
+    }
+  }
+
+  checkAntarcticaUI() {
+    const antarcticaHud = document.getElementById('antarcticaHud');
+    const btnAllScores = document.getElementById('btnAllScores');
+    if (this.antarcticaPhase) {
+      if (antarcticaHud) antarcticaHud.style.display = 'flex';
+      if (btnAllScores) btnAllScores.style.display = 'block';
+    } else {
+      if (antarcticaHud) antarcticaHud.style.display = 'none';
+      if (btnAllScores) btnAllScores.style.display = 'none';
+    }
+  }
+
+  triggerStory() {
+    this.isRunning = false;
+    this.storyTriggered = true;
+    const overlay = document.getElementById('storyOverlay');
+    const text = document.getElementById('storyText');
+    if (overlay && text) {
+      overlay.style.display = 'flex';
+      setTimeout(() => {
+        text.style.bottom = '100%';
+      }, 100);
+
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        this.enterAntarctica();
+      }, 25000);
+    } else {
+      this.enterAntarctica();
+    }
+  }
+
+  enterAntarctica() {
+    this.antarcticaPhase = true;
+    this.talentPoints += 1; // grant 1 point at the start
+    this.saveGame();
+    this.checkAntarcticaUI();
+    this.blocks = [];
+    this.particles = [];
+    this.snowflakes = [];
+    this.lastTime = performance.now();
+    this.isRunning = true;
+    this.updateScoreHUD();
   }
 
   async loadAwardsConfig() {
@@ -213,9 +340,18 @@ class PhysicsContestGame {
   }
 
   start() {
-    this.score = 10;
+    if (!this.hasSave()) {
+        this.score = 10;
+        this.antarcticaPhase = false;
+        this.talentPoints = 0;
+        this.talents = { nourish: false };
+        this.addBonus = 0;
+        this.nextRowMult = 1;
+        this.storyTriggered = false;
+    }
     this.blocks = [];
     this.particles = [];
+    this.snowflakes = [];
     this.isRunning = true;
     this.lastTime = performance.now();
     this.spawnTimer = this.spawnInterval; // spawn first set quickly
@@ -225,6 +361,7 @@ class PhysicsContestGame {
     this.speedMultiplier = 1.0;
 
     this.updateScoreHUD();
+    this.checkAntarcticaUI();
     
     // Kick off the game loop
     requestAnimationFrame((t) => this.gameLoop(t));
@@ -254,9 +391,21 @@ class PhysicsContestGame {
     const finals = Math.floor(tempSemis / 400);
     const tier = this.getAwardTier(finals);
 
-    // Generate operators based on tier probability
-    let op1 = this.generateSingleOp(tier);
-    let op2 = this.generateSingleOp(tier);
+    // Generate operators based on tier probability. Antarctica resets this to tier 0.
+    const effectiveTier = this.antarcticaPhase ? 0 : tier;
+    let op1 = this.generateSingleOp(effectiveTier);
+    let op2 = this.generateSingleOp(effectiveTier);
+
+    // Apply "Nourish" talent logic
+    if (this.talents.nourish) {
+      op1.val += this.addBonus;
+      op2.val += this.addBonus;
+
+      op1.val = Math.max(1, Math.round(op1.val * this.nextRowMult));
+      op2.val = Math.max(1, Math.round(op2.val * this.nextRowMult));
+
+      this.nextRowMult = 1;
+    }
 
     let type1 = op1.op === '*' || op1.op === '+' ? 'good' : 'bad';
     let type2 = op2.op === '*' || op2.op === '+' ? 'good' : 'bad';
@@ -264,10 +413,18 @@ class PhysicsContestGame {
     // Ensure at least one beneficial block per row
     while (type1 === 'bad' && type2 === 'bad') {
       if (Math.random() > 0.5) {
-        op1 = this.generateSingleOp(tier);
+        op1 = this.generateSingleOp(effectiveTier);
+        if (this.talents.nourish) {
+            op1.val += this.addBonus;
+            op1.val = Math.max(1, Math.round(op1.val * this.nextRowMult)); // use nextRowMult if still needed, but it's 1 now
+        }
         type1 = op1.op === '*' || op1.op === '+' ? 'good' : 'bad';
       } else {
-        op2 = this.generateSingleOp(tier);
+        op2 = this.generateSingleOp(effectiveTier);
+        if (this.talents.nourish) {
+            op2.val += this.addBonus;
+            op2.val = Math.max(1, Math.round(op2.val * this.nextRowMult)); // use nextRowMult if still needed, but it's 1 now
+        }
         type2 = op2.op === '*' || op2.op === '+' ? 'good' : 'bad';
       }
     }
@@ -317,11 +474,40 @@ class PhysicsContestGame {
   }
 
   update(dt) {
+    // Update Score check for story
+    const tempSemis = Math.floor(this.score / 400);
+    const finals = Math.floor(tempSemis / 400);
+    if (finals >= 1e20 && !this.antarcticaPhase && !this.storyTriggered) {
+      this.triggerStory();
+      return; // pause physics
+    }
+
     // 1. Spawning timer
     this.spawnTimer += dt * 1000;
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnBlocks();
       this.spawnTimer = 0;
+    }
+
+    // Snowflakes logic in Antarctica
+    if (this.antarcticaPhase) {
+      if (Math.random() < 0.2) {
+        this.snowflakes.push({
+          x: Math.random() * this.width * 1.5,
+          y: -10,
+          vx: -20 - Math.random() * 30,
+          vy: 50 + Math.random() * 50,
+          size: 2 + Math.random() * 4
+        });
+      }
+      for (let i = this.snowflakes.length - 1; i >= 0; i--) {
+        const s = this.snowflakes[i];
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        if (s.y > this.height || s.x < -20) {
+          this.snowflakes.splice(i, 1);
+        }
+      }
     }
 
     // 2. Player 1D Horizontal Physics Update
@@ -410,12 +596,14 @@ class PhysicsContestGame {
     switch (block.op) {
       case '+':
         newScore += block.val;
+        if (this.talents.nourish) this.addBonus += block.val;
         break;
       case '-':
         newScore -= block.val;
         break;
       case '*':
         newScore *= block.val;
+        if (this.talents.nourish) this.nextRowMult *= block.val;
         break;
       case '/':
         // Integer division, rounded
@@ -455,18 +643,44 @@ class PhysicsContestGame {
     const finals = Math.floor(tempSemis / 400);
 
     if (this.scoreHud) {
-      this.scoreHud.innerHTML = `<span>预赛: ${prelims}</span><span>复赛: ${semis}</span><span>决赛: ${finals}</span>`;
+      if (this.antarcticaPhase) {
+        const antarcticaScore = Math.max(0, Math.log10(finals) / 20);
+        let html = `<span>南极洲得分: ${antarcticaScore.toFixed(4)}</span>`;
+        if (this.showAllScores) {
+          html += `<span>预赛: ${prelims}</span><span>复赛: ${semis}</span><span>决赛: ${finals}</span>`;
+        }
+        this.scoreHud.innerHTML = html;
+      } else {
+        this.scoreHud.innerHTML = `<span>预赛: ${prelims}</span><span>复赛: ${semis}</span><span>决赛: ${finals}</span>`;
+      }
     }
 
     if (this.awardHud) {
-      const awardName = this.getAwardName(finals);
-      this.awardHud.textContent = `当前奖项: ${awardName}`;
+      if (this.antarcticaPhase) {
+         this.awardHud.style.display = 'none';
+      } else {
+         this.awardHud.style.display = 'block';
+         const awardName = this.getAwardName(finals);
+         this.awardHud.textContent = `当前奖项: ${awardName}`;
+      }
     }
   }
 
   draw() {
     // Clear Canvas
     this.ctx.clearRect(0, 0, this.width, this.height);
+
+    // Draw Antarctica Snowflakes
+    if (this.antarcticaPhase) {
+      this.ctx.fillStyle = '#aaddff';
+      this.ctx.globalAlpha = 0.6;
+      this.snowflakes.forEach(s => {
+        this.ctx.beginPath();
+        this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        this.ctx.fill();
+      });
+      this.ctx.globalAlpha = 1.0;
+    }
 
     // Retrieve active theme colors from DOM (safely wrapped)
     const bodyStyle = getComputedStyle(document.body);

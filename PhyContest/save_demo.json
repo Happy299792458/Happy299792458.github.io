@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "score": 10,
+  "antarcticaPhase": false,
+  "talentPoints": 0,
+  "talents": {
+    "nourish": false
+  },
+  "addBonus": 0,
+  "nextRowMult": 1,
+  "storyTriggered": false
+}
